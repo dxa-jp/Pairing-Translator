@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- edge-to-edge未満のOS(Android 14以下)向けにシステムバーを暗色化 -->
+    <style name="Theme.Poc" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#1B1B1F</item>
+        <item name="android:navigationBarColor">#1B1B1F</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+</resources>
