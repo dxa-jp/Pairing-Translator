@@ -33,7 +33,7 @@
 ## 2. Soniox WebSocket API(アプリの利用範囲)
 
 エンドポイント: `wss://stt-rt.soniox.com/transcribe-websocket`
-モデル: `stt-rt-v5` / 音声: 16kHz PCM s16le モノラル(バイナリフレームで送信)
+モデル: 一時キーAPIの `model` / 音声: 16kHz PCM s16le モノラル(バイナリフレームで送信)
 
 ### 2.1 設定メッセージ(接続直後に1回、JSON)
 
@@ -41,12 +41,13 @@
 {
   "api_key": "<一時キー>",
   "model": "<一時キーAPIの戻り値のmodel>",
-  "language": "ja",
+  "language_hints": ["ja", "en"],
+  "language_hints_strict": false,
+  "enable_language_identification": true,
+  "enable_endpoint_detection": true,
   "audio_format": "pcm_s16le",
   "sample_rate": 16000,
   "num_channels": 1,
-  "enable_streaming_translation": true,
-  "include_non_final": true,
   "translation": {
     "type": "one_way",
     "target_language": "en"
@@ -54,12 +55,14 @@
 }
 ```
 
-**重要な実装上の約束事**(実機検証で判明):
+**言語の扱い（v0.2.4）**:
 
-- 入力言語は**単数形の `"language"` で指定**する(HonyakuSapo実績方式)。
-  `"languages"`(複数形配列)を渡すと one_way 翻訳が効かなくなる
-- `"language"` を Auto でなく固定指定すると、指定外言語の音声は無視される
-  (自端末マイクに混入した相手の声を翻訳しないための仕様活用)
+- 両端末の声が入るため、`language_hints` に両言語を指定し、`language_hints_strict=false` で言語判定を一方へ強制しない。
+- 原文は `translation_status=original` かつ `language=自分の入力言語` のみ採用。
+- 訳文は `translation_status=translation`、`language=相手の言語`、`source_language=自分の入力言語` のみ採用。
+- `none`、対象外言語、言語不明のトークンは表示・送信しない。
+- 日本語入力では日本語文字を含まない原文を途中表示・確定送信しない（日本語文中の英字は維持）。
+- 日本語ラベル付きの英語文への防御であり、日本語へ音写された誤認識を除外する保証はない。
 
 ### 2.2 結果メッセージ(JSON)
 
@@ -67,19 +70,26 @@
 {
   "tokens": [
     {"text": "今日は", "is_final": false, "translation_status": "original", "language": "ja"},
-    {"text": "The weather", "is_final": true, "translation_status": "translation", "language": "en"}
+    {"text": "The weather", "is_final": true, "translation_status": "translation", "language": "en", "source_language": "ja"}
   ]
 }
 ```
 
 - トークン属性: `text` / `is_final` / `translation_status`(`original`=認識, `translation`=訳文) / `language`
-- 各メッセージの `tokens` は現在発話の累積。表示には既出プレフィックスの除去が必要
+- 確定トークンは一度だけ届くため追記する。未確定トークンは各応答で置き換える。
 
 ### 2.3 確定ルール(アプリの実装方針)
 
-- **訳文の `is_final` が立った時点で**「ファイナル原文+ファイナル訳文」のペアを確定する
-- 原文の `is_final` では確定しない(訳文は原文より遅れて届くため)
+- `is_final` はトークンの確定であり、発話全体の完了ではない。
+- `<end>` または正常終了 `finished` で、蓄積済みの確定原文・確定訳文を一度だけ送信する。
+- 原文の終端が先に届く場合は訳文を待つ。訳文未着のまま新しい原文が来た場合は、前の原文を混ぜない。
+- `<fin>` は手動確定通知として除外し、発話の区切りには使わない。
+- 切断・エラーで未完了の内容を確定送信しない。
 - 送信用蓄積は `is_final` トークンのみ(未確定トークンを含めると断片化する)
+
+参考: [Soniox言語制限](https://soniox.com/docs/stt/concepts/language-restrictions)、
+[トークン形式](https://soniox.com/docs/translation/stt-translation#token-format)、
+[発話終端](https://soniox.com/docs/stt/rt/endpoint-detection)。
 - エラーは `error_type` / `error_message` で通知され接続が閉じる(429 limit_exceeded / 413 max_duration_reached / 503 service_unavailable 等)。アプリは自動再接続する
 
 ## 3. アプリ間P2Pプロトコル(Nearby Connections)
