@@ -1,0 +1,1286 @@
+[
+  {
+    "tokens": [],
+    "final_audio_proc_ms": 0,
+    "total_audio_proc_ms": 0
+  },
+  {
+    "tokens": [],
+    "final_audio_proc_ms": 0,
+    "total_audio_proc_ms": 120
+  },
+  {
+    "tokens": [
+      {
+        "text": "Hi",
+        "start_ms": 240,
+        "end_ms": 300,
+        "confidence": 0.999,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      }
+    ],
+    "final_audio_proc_ms": 0,
+    "total_audio_proc_ms": 840
+  },
+  {
+    "tokens": [
+      {
+        "text": "Hi",
+        "start_ms": 240,
+        "end_ms": 300,
+        "confidence": 0.999,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " there",
+        "start_ms": 480,
+        "end_ms": 540,
+        "confidence": 0.593,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      }
+    ],
+    "final_audio_proc_ms": 0,
+    "total_audio_proc_ms": 1080
+  },
+  {
+    "tokens": [
+      {
+        "text": "Hi",
+        "start_ms": 240,
+        "end_ms": 300,
+        "confidence": 0.999,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " there",
+        "start_ms": 480,
+        "end_ms": 540,
+        "confidence": 0.593,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": "!",
+        "start_ms": 720,
+        "end_ms": 780,
+        "confidence": 0.995,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      }
+    ],
+    "final_audio_proc_ms": 1200,
+    "total_audio_proc_ms": 1320
+  },
+  {
+    "tokens": [
+      {
+        "text": "こ",
+        "confidence": 0.816,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      },
+      {
+        "text": "ん",
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      },
+      {
+        "text": "に",
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      },
+      {
+        "text": "ち",
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      },
+      {
+        "text": "は",
+        "confidence": 0.999,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      },
+      {
+        "text": "！",
+        "confidence": 0.997,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      }
+    ],
+    "final_audio_proc_ms": 1200,
+    "total_audio_proc_ms": 1320
+  },
+  {
+    "tokens": [
+      {
+        "text": " Wh",
+        "start_ms": 1440,
+        "end_ms": 1500,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": "at",
+        "start_ms": 1500,
+        "end_ms": 1560,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      }
+    ],
+    "final_audio_proc_ms": 1200,
+    "total_audio_proc_ms": 2040
+  },
+  {
+    "tokens": [
+      {
+        "text": " Wh",
+        "start_ms": 1440,
+        "end_ms": 1500,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": "at",
+        "start_ms": 1500,
+        "end_ms": 1560,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " are",
+        "start_ms": 1620,
+        "end_ms": 1680,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      }
+    ],
+    "final_audio_proc_ms": 1200,
+    "total_audio_proc_ms": 2160
+  },
+  {
+    "tokens": [
+      {
+        "text": " Wh",
+        "start_ms": 1440,
+        "end_ms": 1500,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": "at",
+        "start_ms": 1500,
+        "end_ms": 1560,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " are",
+        "start_ms": 1620,
+        "end_ms": 1680,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " y",
+        "start_ms": 1680,
+        "end_ms": 1740,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      }
+    ],
+    "final_audio_proc_ms": 1200,
+    "total_audio_proc_ms": 2280
+  },
+  {
+    "tokens": [
+      {
+        "text": " Wh",
+        "start_ms": 1440,
+        "end_ms": 1500,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": "at",
+        "start_ms": 1500,
+        "end_ms": 1560,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " are",
+        "start_ms": 1620,
+        "end_ms": 1680,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " y",
+        "start_ms": 1680,
+        "end_ms": 1740,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": "ou",
+        "start_ms": 1800,
+        "end_ms": 1860,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " do",
+        "start_ms": 1860,
+        "end_ms": 1920,
+        "confidence": 1,
+        "is_final": false,
+        "language": "en",
+        "translation_status": "original"
+      }
+    ],
+    "final_audio_proc_ms": 1200,
+    "total_audio_proc_ms": 2400
+  },
+  {
+    "tokens": [
+      {
+        "text": " Wh",
+        "start_ms": 1440,
+        "end_ms": 1500,
+        "confidence": 1,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": "at",
+        "start_ms": 1500,
+        "end_ms": 1560,
+        "confidence": 1,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " are",
+        "start_ms": 1620,
+        "end_ms": 1680,
+        "confidence": 1,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " y",
+        "start_ms": 1680,
+        "end_ms": 1740,
+        "confidence": 1,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": "ou",
+        "start_ms": 1800,
+        "end_ms": 1860,
+        "confidence": 1,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": " do",
+        "start_ms": 1860,
+        "end_ms": 1920,
+        "confidence": 1,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": "ing",
+        "start_ms": 2100,
+        "end_ms": 2160,
+        "confidence": 0.994,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      },
+      {
+        "text": "?",
+        "start_ms": 2160,
+        "end_ms": 2160,
+        "confidence": 0.996,
+        "is_final": true,
+        "language": "en",
+        "translation_status": "original"
+      }
+    ],
+    "final_audio_proc_ms": 2520,
+    "total_audio_proc_ms": 2640
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      },
+      {
+        "text": "何",
+        "confidence": 0.875,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      },
+      {
+        "text": "を",
+        "confidence": 0.833,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      },
+      {
+        "text": "している",
+        "confidence": 0.757,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      },
+      {
+        "text": "の",
+        "confidence": 0.619,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      },
+      {
+        "text": "？",
+        "confidence": 0.978,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "translation",
+        "source_language": "en"
+      }
+    ],
+    "final_audio_proc_ms": 2520,
+    "total_audio_proc_ms": 2640
+  },
+  {
+    "tokens": [
+      {
+        "text": "<end>",
+        "confidence": 1,
+        "is_final": true,
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 2640,
+    "total_audio_proc_ms": 2640
+  },
+  {
+    "tokens": [],
+    "final_audio_proc_ms": 2640,
+    "total_audio_proc_ms": 4080
+  },
+  {
+    "tokens": [],
+    "final_audio_proc_ms": 2640,
+    "total_audio_proc_ms": 5040
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 5220,
+        "end_ms": 5280,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 2640,
+    "total_audio_proc_ms": 5760
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 5220,
+        "end_ms": 5280,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "こ",
+        "start_ms": 5340,
+        "end_ms": 5400,
+        "confidence": 0.997,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 2640,
+    "total_audio_proc_ms": 5880
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 5220,
+        "end_ms": 5280,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "こ",
+        "start_ms": 5340,
+        "end_ms": 5400,
+        "confidence": 0.997,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ん",
+        "start_ms": 5400,
+        "end_ms": 5460,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 2640,
+    "total_audio_proc_ms": 6000
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 5220,
+        "end_ms": 5280,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "こ",
+        "start_ms": 5340,
+        "end_ms": 5400,
+        "confidence": 0.997,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ん",
+        "start_ms": 5400,
+        "end_ms": 5460,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "に",
+        "start_ms": 5520,
+        "end_ms": 5580,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ち",
+        "start_ms": 5580,
+        "end_ms": 5640,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 2640,
+    "total_audio_proc_ms": 6120
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 5220,
+        "end_ms": 5280,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "こ",
+        "start_ms": 5340,
+        "end_ms": 5400,
+        "confidence": 0.997,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ん",
+        "start_ms": 5400,
+        "end_ms": 5460,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "に",
+        "start_ms": 5520,
+        "end_ms": 5580,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ち",
+        "start_ms": 5580,
+        "end_ms": 5640,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "は",
+        "start_ms": 5700,
+        "end_ms": 5760,
+        "confidence": 0.95,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 2640,
+    "total_audio_proc_ms": 6240
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 5220,
+        "end_ms": 5280,
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "こ",
+        "start_ms": 5340,
+        "end_ms": 5400,
+        "confidence": 0.997,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ん",
+        "start_ms": 5400,
+        "end_ms": 5460,
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "に",
+        "start_ms": 5520,
+        "end_ms": 5580,
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ち",
+        "start_ms": 5580,
+        "end_ms": 5640,
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "は",
+        "start_ms": 5700,
+        "end_ms": 5760,
+        "confidence": 0.95,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "。",
+        "start_ms": 5820,
+        "end_ms": 5880,
+        "confidence": 0.969,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "<end>",
+        "confidence": 1,
+        "is_final": true,
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 6360,
+    "total_audio_proc_ms": 6360
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 6720,
+        "end_ms": 6780,
+        "confidence": 0.994,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 6360,
+    "total_audio_proc_ms": 7320
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 6720,
+        "end_ms": 6780,
+        "confidence": 0.994,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "プロ",
+        "start_ms": 6900,
+        "end_ms": 6960,
+        "confidence": 0.999,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 6360,
+    "total_audio_proc_ms": 7440
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 6720,
+        "end_ms": 6780,
+        "confidence": 0.994,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "プロ",
+        "start_ms": 6900,
+        "end_ms": 6960,
+        "confidence": 0.999,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "グラ",
+        "start_ms": 7080,
+        "end_ms": 7140,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 6360,
+    "total_audio_proc_ms": 7680
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 6720,
+        "end_ms": 6780,
+        "confidence": 0.994,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "プロ",
+        "start_ms": 6900,
+        "end_ms": 6960,
+        "confidence": 0.999,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "グラ",
+        "start_ms": 7080,
+        "end_ms": 7140,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ミ",
+        "start_ms": 7260,
+        "end_ms": 7320,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 6360,
+    "total_audio_proc_ms": 7800
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 6720,
+        "end_ms": 6780,
+        "confidence": 0.994,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "プロ",
+        "start_ms": 6900,
+        "end_ms": 6960,
+        "confidence": 0.999,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "グラ",
+        "start_ms": 7080,
+        "end_ms": 7140,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ミ",
+        "start_ms": 7260,
+        "end_ms": 7320,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ング",
+        "start_ms": 7380,
+        "end_ms": 7440,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 6360,
+    "total_audio_proc_ms": 7920
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 6720,
+        "end_ms": 6780,
+        "confidence": 0.994,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "プロ",
+        "start_ms": 6900,
+        "end_ms": 6960,
+        "confidence": 0.999,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "グラ",
+        "start_ms": 7080,
+        "end_ms": 7140,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ミ",
+        "start_ms": 7260,
+        "end_ms": 7320,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ング",
+        "start_ms": 7380,
+        "end_ms": 7440,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "して",
+        "start_ms": 7680,
+        "end_ms": 7740,
+        "confidence": 0.562,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 6360,
+    "total_audio_proc_ms": 8280
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 6720,
+        "end_ms": 6780,
+        "confidence": 0.994,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "プロ",
+        "start_ms": 6900,
+        "end_ms": 6960,
+        "confidence": 0.999,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "グラ",
+        "start_ms": 7080,
+        "end_ms": 7140,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ミ",
+        "start_ms": 7260,
+        "end_ms": 7320,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ング",
+        "start_ms": 7380,
+        "end_ms": 7440,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "して",
+        "start_ms": 7680,
+        "end_ms": 7740,
+        "confidence": 0.562,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ま",
+        "start_ms": 7860,
+        "end_ms": 7920,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 6360,
+    "total_audio_proc_ms": 8400
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 6720,
+        "end_ms": 6780,
+        "confidence": 0.994,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "プロ",
+        "start_ms": 6900,
+        "end_ms": 6960,
+        "confidence": 0.999,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "グラ",
+        "start_ms": 7080,
+        "end_ms": 7140,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ミ",
+        "start_ms": 7260,
+        "end_ms": 7320,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ング",
+        "start_ms": 7380,
+        "end_ms": 7440,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "して",
+        "start_ms": 7680,
+        "end_ms": 7740,
+        "confidence": 0.562,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ま",
+        "start_ms": 7860,
+        "end_ms": 7920,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "す",
+        "start_ms": 7980,
+        "end_ms": 8040,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 6360,
+    "total_audio_proc_ms": 8520
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 6720,
+        "end_ms": 6780,
+        "confidence": 0.994,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "プロ",
+        "start_ms": 6900,
+        "end_ms": 6960,
+        "confidence": 0.999,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "グラ",
+        "start_ms": 7080,
+        "end_ms": 7140,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ミ",
+        "start_ms": 7260,
+        "end_ms": 7320,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ング",
+        "start_ms": 7380,
+        "end_ms": 7440,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "して",
+        "start_ms": 7680,
+        "end_ms": 7740,
+        "confidence": 0.562,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ま",
+        "start_ms": 7860,
+        "end_ms": 7920,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "す",
+        "start_ms": 7980,
+        "end_ms": 8040,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "よ",
+        "start_ms": 8100,
+        "end_ms": 8160,
+        "confidence": 1,
+        "is_final": false,
+        "language": "ja",
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 6360,
+    "total_audio_proc_ms": 8640
+  },
+  {
+    "tokens": [
+      {
+        "text": " ",
+        "start_ms": 6720,
+        "end_ms": 6780,
+        "confidence": 0.994,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "プロ",
+        "start_ms": 6900,
+        "end_ms": 6960,
+        "confidence": 0.999,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "グラ",
+        "start_ms": 7080,
+        "end_ms": 7140,
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ミ",
+        "start_ms": 7260,
+        "end_ms": 7320,
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ング",
+        "start_ms": 7380,
+        "end_ms": 7440,
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "して",
+        "start_ms": 7680,
+        "end_ms": 7740,
+        "confidence": 0.562,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "ま",
+        "start_ms": 7860,
+        "end_ms": 7920,
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "す",
+        "start_ms": 7980,
+        "end_ms": 8040,
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "よ",
+        "start_ms": 8100,
+        "end_ms": 8160,
+        "confidence": 1,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "。",
+        "start_ms": 8220,
+        "end_ms": 8280,
+        "confidence": 0.996,
+        "is_final": true,
+        "language": "ja",
+        "translation_status": "none"
+      },
+      {
+        "text": "<end>",
+        "confidence": 1,
+        "is_final": true,
+        "translation_status": "none"
+      }
+    ],
+    "final_audio_proc_ms": 8760,
+    "total_audio_proc_ms": 8760
+  },
+  {
+    "tokens": [],
+    "final_audio_proc_ms": 8760,
+    "total_audio_proc_ms": 9720
+  },
+  {
+    "tokens": [],
+    "final_audio_proc_ms": 8760,
+    "total_audio_proc_ms": 10800
+  },
+  {
+    "tokens": [],
+    "final_audio_proc_ms": 11160,
+    "total_audio_proc_ms": 11160,
+    "finished": true
+  }
+]
