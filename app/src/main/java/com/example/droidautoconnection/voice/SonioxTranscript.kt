@@ -61,8 +61,10 @@ internal class SonioxTranscript(private val sourceLang: String, private val targ
             val status = token.optString("translation_status")
             val language = token.optString("language")
             val isOriginal = status == "original" && language == sourceLang
+            // source_language を含まない応答形式でも訳文を落とさない。
+            val translationSource = token.optString("source_language")
             val isTranslation = status == "translation" && language == targetLang &&
-                token.optString("source_language") == sourceLang
+                (translationSource.isEmpty() || translationSource == sourceLang)
             if (isOriginal && awaitingTranslation) {
                 // 訳文が来ないまま新しい原文が始まった場合、前の発話を混ぜない。
                 original.clear()

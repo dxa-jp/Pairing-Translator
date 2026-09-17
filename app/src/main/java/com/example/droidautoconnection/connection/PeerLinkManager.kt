@@ -2,6 +2,8 @@ package com.example.droidautoconnection.connection
 
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -131,6 +133,12 @@ class PeerLinkManager(private val context: Context) :
     private var liveEntryId: String? = null
 
     private val timeFmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    /** 音声リスナーはOkHttpスレッドからも呼ばれるため、UI状態の更新は必ずメインスレッドで行う */
+    private fun onMainThread(block: () -> Unit) {
+        if (Looper.myLooper() == Looper.getMainLooper()) block() else mainHandler.post(block)
+    }
 
     private fun log(text: String) {
         android.util.Log.d(TAG, text)
@@ -517,64 +525,72 @@ class PeerLinkManager(private val context: Context) :
     // --- VoiceSessionManager.Listener ---
 
     override fun onVoicePartial(original: String, translation: String) {
-        if (original.isBlank() && translation.isBlank()) {
-            val id = liveEntryId
-            entries = entries.filterNot { it.id == id }
-            liveEntryId = null
-            return
-        }
-        if (liveEntryId == null) {
-            liveEntryId = UUID.randomUUID().toString()
-            addEntry(
-                SpeechEntry(
-                    id = liveEntryId!!,
-                    original = "",
-                    translation = "",
-                    mine = true,
-                    final = false,
-                ),
-            )
-        }
-        updateLiveEntry {
-            it.copy(original = original, translation = translation)
+        onMainThread {
+            if (original.isBlank() && translation.isBlank()) {
+                val id = liveEntryId
+                entries = entries.filterNot { it.id == id }
+                liveEntryId = null
+                return@onMainThread
+            }
+            if (liveEntryId == null) {
+                liveEntryId = UUID.randomUUID().toString()
+                addEntry(
+                    SpeechEntry(
+                        id = liveEntryId!!,
+                        original = "",
+                        translation = "",
+                        mine = true,
+                        final = false,
+                    ),
+                )
+            }
+            updateLiveEntry {
+                it.copy(original = original, translation = translation)
+            }
         }
     }
 
     override fun onVoiceFinal(original: String, translation: String) {
-        val id = liveEntryId
-        liveEntryId = null
-        if (id != null) {
-            entries = entries.map {
-                if (it.id == id) it.copy(original = original, translation = translation, final = true)
-                else it
+        onMainThread {
+            val id = liveEntryId
+            liveEntryId = null
+            if (id != null) {
+                entries = entries.map {
+                    if (it.id == id) it.copy(original = original, translation = translation, final = true)
+                    else it
+                }
+            } else if (original.isNotBlank()) {
+                addEntry(
+                    SpeechEntry(
+                        id = UUID.randomUUID().toString(),
+                        original = original,
+                        translation = translation,
+                        mine = true,
+                        final = true,
+                    ),
+                )
             }
-        } else if (original.isNotBlank()) {
-            addEntry(
-                SpeechEntry(
-                    id = UUID.randomUUID().toString(),
-                    original = original,
-                    translation = translation,
-                    mine = true,
-                    final = true,
-                ),
-            )
-        }
-        if (original.isNotBlank() || translation.isNotBlank()) {
-            sendSpeech(original, translation)
+            if (original.isNotBlank() || translation.isNotBlank()) {
+                sendSpeech(original, translation)
+            }
         }
     }
 
     override fun onVoiceError(message: String) {
-        log("音声エラー: $message")
-        addEntry(SpeechEntry.system(message))
+        onMainThread {
+            log("音声エラー: $message")
+            addEntry(SpeechEntry.system(message))
+        }
     }
 
     override fun onVoiceDebug(message: String) {
-        log(message)
+        onMainThread { log(message) }
     }
 
     override fun onVoiceStateChanged(state: VoiceState) {
-        if (state != VoiceState.LISTENING) onVoicePartial("", "")
-        voiceState = state
+        onMainThread {
+            if (state != VoiceState.LISTENING) onVoicePartial("", "")
+            voiceState = state
+        }
     }
 }

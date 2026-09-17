@@ -30,6 +30,8 @@ enum class VoiceState { IDLE, REQUESTING_KEY, LISTENING, ERROR }
  * - 16kHz PCMモノラルでマイクを読み、Sonioxへ常時送信する
  * - 一時キー(実効1時間)とSonioxストリーム上限(300分)に備え、55分ごとに
  *   セッションを張り直す
+ * - Sonioxとの切断やキー取得の一時的失敗からは、バックオフ再接続で
+ *   自動復旧する(ネットワーク回復まで最大60秒間隔で再試行)
  * - 相手との接続が切れたらpause()で止め、再接続時にstart()で再開する
  */
 class VoiceSessionManager(
@@ -50,6 +52,8 @@ class VoiceSessionManager(
         private const val SAMPLE_RATE = 16000
         private const val ROTATION_MINUTES = 55L
         private const val KEY_REFRESH_MARGIN_MS = 5 * 60 * 1000L
+        private const val RECONNECT_BASE_DELAY_MS = 2_000L
+        private const val RECONNECT_MAX_DELAY_MS = 60_000L
     }
 
     var state: VoiceState = VoiceState.IDLE
@@ -63,6 +67,8 @@ class VoiceSessionManager(
     private var audioRecord: AudioRecord? = null
     private var audioJob: Job? = null
     private var rotationJob: Job? = null
+    private var reconnectJob: Job? = null
+    private var reconnectAttempts = 0
     private var sourceLang: String = "ja"
     private var targetLang: String = "en"
     private var deviceId: String = ""
@@ -72,26 +78,25 @@ class VoiceSessionManager(
     /** 相手と接続したら呼ぶ。既に動作中なら言語変更がなければ何もしない */
     fun start(source: String, target: String, deviceId: String) {
         this.deviceId = deviceId
-        if (running && source == sourceLang && target == targetLang) return
+        if (running && source == sourceLang && target == targetLang) {
+            // 同一条件。自動再接続待ちなら継続に任せ、止まったままなら再接続をかける
+            if (state == VoiceState.ERROR && reconnectJob == null) scheduleReconnect()
+            return
+        }
         pause()
         sourceLang = source
         targetLang = target
         running = true
+        reconnectAttempts = 0
         scope.launch { startSession() }
     }
 
     /** 相手と切断したら呼ぶ。キーは温存し、マイクとソケットだけ止める */
     fun pause() {
         running = false
-        rotationJob?.cancel()
-        rotationJob = null
-        audioJob?.cancel()
-        audioJob = null
-        runCatching { audioRecord?.stop() }
-        audioRecord?.release()
-        audioRecord = null
-        socketClient?.stop()
-        socketClient = null
+        reconnectJob?.cancel()
+        reconnectJob = null
+        stopCapture()
         state = VoiceState.IDLE
     }
 
@@ -115,6 +120,9 @@ class VoiceSessionManager(
             is BackendClient.KeyResult.Error -> {
                 state = VoiceState.ERROR
                 listener.onVoiceError("サーバーエラー: ${keyResult.message}")
+                // ネットワーク揺らぎ等の一時的故障なら自動復旧する。未承認(Rejected)は
+                // サーバーが意図して拒否しているため再試行しない。
+                if (running) scheduleReconnect()
             }
         }
     }
@@ -122,6 +130,9 @@ class VoiceSessionManager(
     @SuppressLint("MissingPermission") // 呼び出し前にPermissions.granted()で確認済み
     private fun startListening(apiKey: String, model: String) {
         if (!running) return
+        reconnectJob?.cancel()
+        reconnectJob = null
+        reconnectAttempts = 0
         state = VoiceState.LISTENING
         Log.d(TAG, "音声セッション開始: $sourceLang → $targetLang")
 
@@ -160,26 +171,56 @@ class VoiceSessionManager(
             delay(ROTATION_MINUTES * 60 * 1000)
             if (!running) return@launch
             Log.d(TAG, "セッションローテーション: 張り直します")
-            audioJob?.cancel()
-            runCatching { audioRecord?.stop() }
-            audioRecord?.release()
-            audioRecord = null
-            socketClient?.stop()
-            socketClient = null
+            stopCapture()
             startSession()
         }
     }
 
+    /** マイク読み取りとソケットだけを止める。stateとrunningは変えない */
+    private fun stopCapture() {
+        rotationJob?.cancel()
+        rotationJob = null
+        audioJob?.cancel()
+        audioJob = null
+        runCatching { audioRecord?.stop() }
+        audioRecord?.release()
+        audioRecord = null
+        socketClient?.stop()
+        socketClient = null
+    }
+
+    /** キー失効や切断からセッションを張り直す */
     private fun restartDueToKeyExpiry() {
         val elapsed = System.currentTimeMillis() - keyFetchedAt
-        if (elapsed < 60 * 60 * 1000 - KEY_REFRESH_MARGIN_MS) {
-            // キー失効以外の切断。バックオフ再接続はuiEvents経由で上位に任せる
-            state = VoiceState.ERROR
+        if (elapsed >= 60 * 60 * 1000 - KEY_REFRESH_MARGIN_MS) {
+            // キー失効による切断。新キーを取得して即座に張り直す
+            scope.launch {
+                pause()
+                running = true
+                startSession()
+            }
             return
         }
-        scope.launch {
-            pause()
-            running = true
+        // キー失効以外の切断(ネットワーク揺らぎなど)。バックオフで自動復旧する
+        scheduleReconnect()
+    }
+
+    /**
+     * 切断からの自動再接続。2秒から指数バックオフ(上限60秒)で成功まで
+     * 再試行する。待機中はマイクを止めておき、ネットワーク回復後に張り直す。
+     */
+    private fun scheduleReconnect() {
+        if (!running) return
+        reconnectJob?.cancel()
+        stopCapture()
+        state = VoiceState.ERROR
+        val delayMs = (RECONNECT_BASE_DELAY_MS shl reconnectAttempts.coerceAtMost(5))
+            .coerceAtMost(RECONNECT_MAX_DELAY_MS)
+        reconnectAttempts++
+        Log.d(TAG, "音声セッション再接続: ${delayMs / 1000}秒後に試みます(${reconnectAttempts}回目)")
+        reconnectJob = scope.launch {
+            delay(delayMs)
+            if (!running) return@launch
             startSession()
         }
     }

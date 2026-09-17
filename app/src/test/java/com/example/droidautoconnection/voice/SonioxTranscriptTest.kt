@@ -38,6 +38,15 @@ class SonioxTranscriptTest {
         assertEquals(5, result.rejectedTokens)
     }
 
+    @Test fun acceptsTranslationWithoutSourceLanguageField() {
+        val legacy = JSONObject()
+            .put("text", "Hello.").put("is_final", true)
+            .put("translation_status", "translation").put("language", "en")
+        val result = SonioxTranscript("ja", "en").accept(
+            response(token("こんにちは。"), legacy, end()))
+        assertEquals(listOf(SonioxTranscript.Utterance("こんにちは。", "Hello.")), result.completed)
+    }
+
     @Test fun provisionalCorrectionReplacesPreviousText() {
         val buffer = SonioxTranscript("ja", "en")
         buffer.accept(response(token("私は今日", false), translated("Today", false)))
