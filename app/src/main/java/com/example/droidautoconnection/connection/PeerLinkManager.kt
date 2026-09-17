@@ -127,10 +127,8 @@ class PeerLinkManager(private val context: Context) :
     private var lastIncomingAt = 0L
     private var serverApproved = false
 
-    // 自分の発話の部分結果を蓄積するライブエントリ
+    // 自分の発話の途中表示。受信するスナップショットで置き換える。
     private var liveEntryId: String? = null
-    private val liveOriginal = StringBuilder()
-    private val liveTranslation = StringBuilder()
 
     private val timeFmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
@@ -519,6 +517,12 @@ class PeerLinkManager(private val context: Context) :
     // --- VoiceSessionManager.Listener ---
 
     override fun onVoicePartial(original: String, translation: String) {
+        if (original.isBlank() && translation.isBlank()) {
+            val id = liveEntryId
+            entries = entries.filterNot { it.id == id }
+            liveEntryId = null
+            return
+        }
         if (liveEntryId == null) {
             liveEntryId = UUID.randomUUID().toString()
             addEntry(
@@ -531,18 +535,14 @@ class PeerLinkManager(private val context: Context) :
                 ),
             )
         }
-        liveOriginal.append(original)
-        liveTranslation.append(translation)
         updateLiveEntry {
-            it.copy(original = liveOriginal.toString(), translation = liveTranslation.toString())
+            it.copy(original = original, translation = translation)
         }
     }
 
     override fun onVoiceFinal(original: String, translation: String) {
         val id = liveEntryId
         liveEntryId = null
-        liveOriginal.clear()
-        liveTranslation.clear()
         if (id != null) {
             entries = entries.map {
                 if (it.id == id) it.copy(original = original, translation = translation, final = true)
@@ -574,6 +574,7 @@ class PeerLinkManager(private val context: Context) :
     }
 
     override fun onVoiceStateChanged(state: VoiceState) {
+        if (state != VoiceState.LISTENING) onVoicePartial("", "")
         voiceState = state
     }
 }
