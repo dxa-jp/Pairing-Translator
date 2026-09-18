@@ -1,30 +1,38 @@
-@file:OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
-
 package com.example.droidautoconnection.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,7 +43,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.droidautoconnection.connection.PeerLinkManager
@@ -43,14 +53,26 @@ import com.example.droidautoconnection.connection.SpeechEntry
 import com.example.droidautoconnection.utils.Languages
 import com.example.droidautoconnection.voice.VoiceState
 
+// HS(翻訳サポ)準拠のカラー/サイズ
+private val HsBackground = Color(0xFFE8F0E8)
+private val HsCardWhite = Color(0xD9FFFFFF)
+private val HsPillWhite = Color(0xB8FFFFFF)
+private val HsTextMain = Color(0xFF1A1A1A)
+private val HsTextSub = Color(0xFF5F6368)
+private val HsMineBubble = Color(0xFF16302B)
+private val HsMineText = Color(0xFFEAFBF5)
+private val HsPeerBubble = Color(0xFFFFF4B0)
+private val HsPeerText = Color(0xFF0B2A6B)
+
 /**
- * メイン画面: 自分の入力言語設定 + 音声翻訳の会話ビュー。
- * テキスト入力はなく、接続中は常時リスニングで音声翻訳が流れる。
+ * メイン画面: 下部ツールバー(探索ON/OFF・自分の言語・設定) + チャット形式の会話ビュー。
+ * 接続が確立すると翻訳は自動で開始されるため、翻訳開始ボタンは存在しない。
  */
 @Composable
 fun ConversationScreen(
     peerLink: PeerLinkManager,
     onEnableBluetooth: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val listState = rememberLazyListState()
 
@@ -60,32 +82,175 @@ fun ConversationScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            // ステータスバー(時計などのピクト)・ナビゲーションバー・
-            // カットアウトと重ならないよう余白を確保する(edge-to-edge対策)。
-            // 余白部分は外側の暗色Surfaceがピクトの背景として見える
+            // ステータスバー・ナビゲーションバー・カットアウトと重ならないようにする
             .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout))
-            .background(MaterialTheme.colorScheme.surface),
+            .background(HsBackground),
     ) {
-        StatusHeader(peerLink)
-        LanguageSelector(peerLink)
-        DiagnosticsPanel(onEnableBluetooth)
-        LogViewer(peerLink.logs)
-
-        LazyColumn(
-            state = listState,
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            items(peerLink.entries) { entry ->
-                SpeechBubble(entry, peerLang = peerLink.peer?.lang)
+        Column(Modifier.fillMaxSize()) {
+            StatusHeader(peerLink)
+            LogViewer(peerLink.logs)
+            LazyColumn(
+                state = listState,
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
+                contentPadding = PaddingValues(
+                    start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp,
+                ),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(peerLink.entries) { entry ->
+                    SpeechBubble(entry, peerLang = peerLink.peer?.lang)
+                }
             }
         }
+
+        ToolbarCard(
+            peerLink = peerLink,
+            onOpenSettings = onOpenSettings,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+        )
+    }
+}
+
+/** HSのツールバーCard(80dp・角丸40・白カード)をComposeで再現したもの */
+@Composable
+private fun ToolbarCard(
+    peerLink: PeerLinkManager,
+    onOpenSettings: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        color = HsCardWhite,
+        shape = RoundedCornerShape(40.dp),
+        shadowElevation = 12.dp,
+        border = BorderStroke(1.dp, Color(0x4DFFFFFF)),
+        modifier = modifier
+            .fillMaxWidth()
+            .height(80.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 24.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            SearchToggleButton(peerLink)
+            LanguagePill(peerLink)
+            CircleIconButton(onClick = onOpenSettings) {
+                Icon(
+                    Icons.Filled.Settings,
+                    contentDescription = "設定",
+                    tint = HsTextSub,
+                    modifier = Modifier.size(24.dp),
+                )
+            }
+        }
+    }
+}
+
+/** 相手探索のON/OFF。HSの翻訳開始ボタンと同じ位置(ツールバー左端)に置くピル */
+@Composable
+private fun SearchToggleButton(peerLink: PeerLinkManager) {
+    val (label, bg, content) = when {
+        !peerLink.started -> Triple("探索 OFF", Color(0xFFB23A18), Color.White)
+        peerLink.state == PeerLinkManager.State.CONNECTED ->
+            Triple("接続済み", Color(0xFF80DEEA), HsTextMain)
+        else -> Triple("探索中…", Color(0xFFF1F5F9), HsTextMain)
+    }
+    Surface(
+        color = bg,
+        shape = RoundedCornerShape(100),
+        shadowElevation = 6.dp,
+        modifier = Modifier
+            .clip(RoundedCornerShape(100))
+            .clickable { if (peerLink.started) peerLink.stop() else peerLink.start() },
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 14.dp)
+                .height(49.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                Icons.Filled.Search,
+                contentDescription = null,
+                tint = content,
+                modifier = Modifier.size(22.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = content)
+        }
+    }
+}
+
+/** 自分の入力言語ピル(旗20sp+コード15sp bold)。タップでドロップダウン選択 */
+@Composable
+private fun LanguagePill(peerLink: PeerLinkManager) {
+    var expanded by remember { mutableStateOf(false) }
+    val info = Languages.list.firstOrNull { it.code == peerLink.myLang }
+
+    Box {
+        Surface(
+            color = HsPillWhite,
+            shape = RoundedCornerShape(100),
+            shadowElevation = 6.dp,
+            modifier = Modifier
+                .clip(RoundedCornerShape(100))
+                .clickable { expanded = true },
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 12.dp)
+                    .height(49.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(info?.flagEmoji ?: "🌐", fontSize = 20.sp)
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    info?.code?.uppercase() ?: peerLink.myLang,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = HsTextMain,
+                )
+            }
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            Languages.list.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text("${item.flagEmoji} ${item.displayName}", fontSize = 14.sp) },
+                    onClick = {
+                        peerLink.myLang = item.code
+                        expanded = false
+                    },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CircleIconButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        color = HsPillWhite,
+        shape = CircleShape,
+        shadowElevation = 6.dp,
+        modifier = modifier
+            .size(49.dp)
+            .clip(CircleShape)
+            .clickable(onClick = onClick),
+    ) {
+        Box(contentAlignment = Alignment.Center) { content() }
     }
 }
 
@@ -113,11 +278,11 @@ private fun StatusHeader(peerLink: PeerLinkManager) {
         else -> "自分: $myDisplay  |  同じアプリを起動した端末を自動で探します"
     }
 
-    Surface(color = MaterialTheme.colorScheme.primaryContainer) {
+    Surface(color = Color(0xCCF1F5F9)) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 12.dp, vertical = 6.dp),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
@@ -130,57 +295,15 @@ private fun StatusHeader(peerLink: PeerLinkManager) {
                 Text(
                     "  サーバー: ${peerLink.serverState}",
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    color = HsTextSub,
                 )
             }
             Text(
                 pairText,
-                style = MaterialTheme.typography.bodySmall,
+                fontSize = 12.sp,
+                color = HsTextMain,
                 modifier = Modifier.padding(top = 2.dp),
             )
-        }
-    }
-}
-
-/**
- * 自分の入力言語を選択するピッカー。変更は保存され、次回接続時から反映される。
- */
-@Composable
-private fun LanguageSelector(peerLink: PeerLinkManager) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedDisplay = Languages.codeToDisplayMap[peerLink.myLang] ?: peerLink.myLang
-
-    ExposedDropdownMenuBox(
-        expanded = expanded,
-        onExpandedChange = { expanded = it },
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-    ) {
-        OutlinedTextField(
-            value = selectedDisplay,
-            onValueChange = {},
-            readOnly = true,
-            label = { Text("自分の入力言語 (変更は次回接続時から反映)") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            modifier = Modifier
-                .menuAnchor()
-                .fillMaxWidth(),
-            textStyle = MaterialTheme.typography.bodyMedium,
-        )
-        ExposedDropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-        ) {
-            Languages.list.forEach { info ->
-                DropdownMenuItem(
-                    text = { Text(info.displayName, fontSize = 14.sp) },
-                    onClick = {
-                        peerLink.myLang = info.code
-                        expanded = false
-                    },
-                )
-            }
         }
     }
 }
@@ -191,8 +314,8 @@ private fun SpeechBubble(entry: SpeechEntry, peerLang: String?) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             Text(
                 entry.original,
-                fontSize = 12.sp,
-                color = Color(0xFF757575),
+                fontSize = 14.sp,
+                color = HsTextSub,
                 modifier = Modifier.padding(vertical = 4.dp),
             )
         }
@@ -209,34 +332,33 @@ private fun SpeechBubble(entry: SpeechEntry, peerLang: String?) {
         contentAlignment = if (entry.mine) Alignment.CenterEnd else Alignment.CenterStart,
     ) {
         Surface(
-            color = if (entry.mine) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.surfaceVariant,
+            color = if (entry.mine) HsMineBubble else HsPeerBubble,
             shape = RoundedCornerShape(
                 topStart = 12.dp,
                 topEnd = 12.dp,
                 bottomStart = if (entry.mine) 12.dp else 2.dp,
                 bottomEnd = if (entry.mine) 2.dp else 12.dp,
             ),
-            modifier = Modifier.widthIn(max = 300.dp),
+            modifier = Modifier.widthIn(max = 480.dp),
         ) {
-            Column(Modifier.padding(horizontal = 12.dp, vertical = 8.dp)) {
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Text(
                     primary.ifEmpty { "…" },
-                    fontSize = 17.sp,
-                    color = if (entry.mine) Color.Unspecified else MaterialTheme.colorScheme.onSurface,
+                    fontSize = 32.sp,
+                    color = if (entry.mine) HsMineText else HsPeerText,
                 )
                 if (secondary.isNotEmpty()) {
                     Text(
                         secondary,
-                        fontSize = 12.sp,
-                        color = if (entry.mine) Color(0xCCFFFFFF) else Color(0xFF757575),
+                        fontSize = 24.sp,
+                        color = if (entry.mine) Color(0x99EAFBF5) else Color(0x990B2A6B),
                     )
                 }
                 if (!entry.final) {
                     Text(
                         "認識中…",
-                        fontSize = 10.sp,
-                        color = if (entry.mine) Color(0x99FFFFFF) else Color(0xFF9E9E9E),
+                        fontSize = 14.sp,
+                        color = if (entry.mine) Color(0x80EAFBF5) else Color(0x800B2A6B),
                     )
                 }
             }

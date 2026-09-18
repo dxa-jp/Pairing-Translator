@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Build
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -36,10 +36,13 @@ import com.example.droidautoconnection.connection.LogLine
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 
+/**
+ * 診断情報カード。HS(翻訳サポ)のデバッグパネルと同じく
+ * 黒地に緑モノスペースで表示する(設定画面の「▼ デバッグ」で使用)。
+ */
 @Composable
-fun DiagnosticsPanel(onEnableBluetooth: () -> Unit) {
+fun DiagnosticsDebugCard(onEnableBluetooth: () -> Unit) {
     val context = LocalContext.current
-    var expanded by remember { mutableStateOf(false) }
     // ON_RESUME相当の再描画用キー(クイック設定でラジオを切り替えた場合の反映)
     var refreshKey by remember { mutableStateOf(0) }
     val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
@@ -54,50 +57,28 @@ fun DiagnosticsPanel(onEnableBluetooth: () -> Unit) {
     val diag = remember(refreshKey) { buildDiagnostics(context) }
 
     Surface(
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = MaterialTheme.shapes.small,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+        color = Color(0xCC000000),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(8.dp)) {
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable { expanded = !expanded },
-            ) {
+        Column(Modifier.padding(16.dp)) {
+            diag.rows.forEach { row ->
                 Text(
-                    if (expanded) "▼ 診断情報" else "▲ 診断情報",
-                    style = MaterialTheme.typography.labelLarge,
+                    "${row.label}: ${row.value}",
+                    color = if (row.warn) Color(0xFFFF5252) else Color(0xFF00FF00),
+                    fontSize = 14.sp,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(vertical = 2.dp),
                 )
             }
-            AnimatedVisibility(visible = expanded) {
-                Column {
-                    diag.rows.forEach { row ->
-                        Row(Modifier.padding(top = 4.dp)) {
-                            Text(
-                                row.label,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text(
-                                row.value,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (row.warn) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.onSurface,
-                            )
-                        }
-                    }
-                    if (!diag.bluetoothEnabled) {
-                        Button(
-                            onClick = onEnableBluetooth,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 8.dp),
-                        ) {
-                            Text("BluetoothをONにする")
-                        }
-                    }
+            if (!diag.bluetoothEnabled) {
+                Button(
+                    onClick = onEnableBluetooth,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                ) {
+                    Text("BluetoothをONにする")
                 }
             }
         }

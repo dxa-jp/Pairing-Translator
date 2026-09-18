@@ -17,7 +17,10 @@ import java.util.concurrent.TimeUnit
  */
 object BackendClient {
 
-    const val BASE_URL = "https://multitranslator.dev.x-tools.biz/"
+    const val DEFAULT_BASE_URL = "https://multitranslator.dev.x-tools.biz/"
+
+    /** 設定画面で変更可能なサーバーURL。MainActivityが起動時にprefs値を反映する */
+    var baseUrl: String = DEFAULT_BASE_URL
 
     /** 端末登録の結果 */
     sealed class RegisterResult {
@@ -42,7 +45,7 @@ object BackendClient {
     suspend fun registerDevice(deviceId: String): RegisterResult = withContext(Dispatchers.IO) {
         val body = FormBody.Builder().add("device_id", deviceId).build()
         val request = Request.Builder()
-            .url(BASE_URL + "api/device_auth.php")
+            .url(baseUrl + "api/device_auth.php")
             .post(body)
             .build()
         val json = runCatching { executeAndParse(request) }.getOrElse {
@@ -67,7 +70,7 @@ object BackendClient {
             .add("duration", "60")
             .build()
         val request = Request.Builder()
-            .url(BASE_URL + "api/temp_key.php")
+            .url(baseUrl + "api/temp_key.php")
             .post(body)
             .build()
         val json = runCatching { executeAndParse(request) }.getOrElse {

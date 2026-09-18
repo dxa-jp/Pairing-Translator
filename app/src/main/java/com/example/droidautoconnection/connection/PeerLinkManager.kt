@@ -91,6 +91,10 @@ class PeerLinkManager(private val context: Context) :
     var voiceState by mutableStateOf(VoiceState.IDLE)
         private set
 
+    /** 相手探索が有効か(メイン画面のON/OFFピルの状態)。stop()でfalse、start()でtrue */
+    var started by mutableStateOf(false)
+        private set
+
     /** メイン画面で選択した自分の入力言語(次回接続時から反映) */
     var myLang: String
         get() = prefs.getString(KEY_MY_LANG, null)
@@ -120,7 +124,6 @@ class PeerLinkManager(private val context: Context) :
     private val client: ConnectionsClient = Nearby.getConnectionsClient(context)
     private val voice = VoiceSessionManager(context, this)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private var started = false
     private var connectedEndpointId: String? = null
     private val foundAt = HashMap<String, Long>()
     private val requestAttempts = HashMap<String, Int>()

@@ -1,5 +1,6 @@
 package com.example.droidautoconnection
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.WindowManager
@@ -8,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
 import com.example.droidautoconnection.connection.PeerLinkManager
+import com.example.droidautoconnection.data.BackendClient
 import com.example.droidautoconnection.ui.AppScreen
 
 class MainActivity : ComponentActivity() {
@@ -35,6 +37,10 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightNavigationBars = false
         }
         peerLink = PeerLinkManager(this)
+        // 設定画面で変更したサーバーURLを反映(HSのendpoint_urlと同じ運用)
+        val prefs = getSharedPreferences("poc_prefs", Context.MODE_PRIVATE)
+        BackendClient.baseUrl = prefs.getString("server_url", null)?.takeIf { it.isNotBlank() }
+            ?: BackendClient.DEFAULT_BASE_URL
         setContent {
             AppScreen(
                 peerLink = peerLink,
@@ -46,6 +52,9 @@ class MainActivity : ComponentActivity() {
                     } catch (_: SecurityException) {
                         // 権限未付与では発生しないはず(権限付与後にのみ表示する)
                     }
+                },
+                onOpenSettings = {
+                    startActivity(Intent(this, SettingsActivity::class.java))
                 },
             )
         }

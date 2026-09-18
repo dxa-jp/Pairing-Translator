@@ -19,6 +19,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -40,6 +41,7 @@ import com.example.droidautoconnection.connection.PeerLinkManager
 fun AppScreen(
     peerLink: PeerLinkManager,
     onEnableBluetooth: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val context = LocalContext.current
     var permsGranted by remember { mutableStateOf(Permissions.granted(context)) }
@@ -59,7 +61,14 @@ fun AppScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    MaterialTheme {
+    MaterialTheme(
+        colorScheme = lightColorScheme(
+            primary = Color(0xFF4C7C7C),
+            background = Color(0xFFE8F0E8),
+            surface = Color(0xFFFFFFFF),
+            onSurface = Color(0xFF1A1A1A),
+        ),
+    ) {
         // 暗色の背景はシステムバー(ピクト)領域の帯として表示され、
         // コンテンツ本体は内側の画面が各自の背景色で描画する
         Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFF1B1B1F)) {
@@ -72,6 +81,7 @@ fun AppScreen(
                 ConversationScreen(
                     peerLink = peerLink,
                     onEnableBluetooth = onEnableBluetooth,
+                    onOpenSettings = onOpenSettings,
                 )
             }
         }
