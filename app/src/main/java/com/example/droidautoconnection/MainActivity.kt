@@ -36,6 +36,12 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightStatusBars = false
             isAppearanceLightNavigationBars = false
         }
+        // フルスクリーン: システムバーを非表示にし、端末エッジのスワイプで一時表示する(HSと同じ挙動)
+        androidx.core.view.WindowInsetsControllerCompat(window, window.decorView).apply {
+            hide(androidx.core.view.WindowInsetsCompat.Type.systemBars())
+            systemBarsBehavior =
+                androidx.core.view.WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
         peerLink = PeerLinkManager(this)
         // 設定画面で変更したサーバーURLを反映(HSのendpoint_urlと同じ運用)
         val prefs = getSharedPreferences("poc_prefs", Context.MODE_PRIVATE)
