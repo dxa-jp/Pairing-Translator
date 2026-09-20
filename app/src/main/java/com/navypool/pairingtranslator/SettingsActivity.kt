@@ -1,4 +1,4 @@
-package com.example.droidautoconnection
+package com.navypool.pairingtranslator
 
 import android.bluetooth.BluetoothAdapter
 import android.content.ClipData
@@ -51,8 +51,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
-import com.example.droidautoconnection.data.BackendClient
-import com.example.droidautoconnection.ui.DiagnosticsDebugCard
+import com.navypool.pairingtranslator.data.BackendClient
+import com.navypool.pairingtranslator.ui.DiagnosticsDebugCard
 
 private val HsBackground = Color(0xFFE8F0E8)
 private val HsPillWhite = Color(0xB8FFFFFF)

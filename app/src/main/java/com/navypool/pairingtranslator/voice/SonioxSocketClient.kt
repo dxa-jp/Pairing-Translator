@@ -1,4 +1,4 @@
-package com.example.droidautoconnection.voice
+package com.navypool.pairingtranslator.voice
 
 import android.util.Log
 import okhttp3.OkHttpClient
@@ -28,7 +28,7 @@ class SonioxSocketClient(
     }
 
     companion object {
-        private const val TAG = "PocChat"
+        private const val TAG = "PairingTranslator"
         private const val URL = "wss://stt-rt.soniox.com/transcribe-websocket"
     }
 

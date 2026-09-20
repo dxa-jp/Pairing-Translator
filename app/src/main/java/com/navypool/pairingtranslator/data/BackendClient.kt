@@ -1,4 +1,4 @@
-package com.example.droidautoconnection.data
+package com.navypool.pairingtranslator.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

@@ -1,4 +1,4 @@
-package com.example.droidautoconnection
+package com.navypool.pairingtranslator
 
 import android.content.Context
 import android.content.Intent
@@ -8,9 +8,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.WindowCompat
-import com.example.droidautoconnection.connection.PeerLinkManager
-import com.example.droidautoconnection.data.BackendClient
-import com.example.droidautoconnection.ui.AppScreen
+import com.navypool.pairingtranslator.connection.PeerLinkManager
+import com.navypool.pairingtranslator.data.BackendClient
+import com.navypool.pairingtranslator.ui.AppScreen
 
 class MainActivity : ComponentActivity() {
 

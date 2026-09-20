@@ -1,4 +1,4 @@
-package com.example.droidautoconnection.voice
+package com.navypool.pairingtranslator.voice
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -6,7 +6,7 @@ import android.media.AudioFormat
 import android.media.AudioRecord
 import android.media.MediaRecorder
 import android.util.Log
-import com.example.droidautoconnection.data.BackendClient
+import com.navypool.pairingtranslator.data.BackendClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -48,7 +48,7 @@ class VoiceSessionManager(
     }
 
     companion object {
-        private const val TAG = "PocChat"
+        private const val TAG = "PairingTranslator"
         private const val SAMPLE_RATE = 16000
         private const val ROTATION_MINUTES = 55L
         private const val KEY_REFRESH_MARGIN_MS = 5 * 60 * 1000L

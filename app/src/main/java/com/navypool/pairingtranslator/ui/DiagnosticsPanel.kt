@@ -1,4 +1,4 @@
-package com.example.droidautoconnection.ui
+package com.navypool.pairingtranslator.ui
 
 import android.bluetooth.BluetoothManager
 import android.content.Context
@@ -32,7 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.droidautoconnection.connection.LogLine
+import com.navypool.pairingtranslator.connection.LogLine
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 

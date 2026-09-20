@@ -94,7 +94,7 @@
 
 ## 3. アプリ間P2Pプロトコル(Nearby Connections)
 
-輸送: Nearby Connections BYTESペイロード(上限32KB)、UTF-8 JSON。Service ID: `com.example.droidautoconnection.SONIX_V1`
+輸送: Nearby Connections BYTESペイロード(上限32KB)、UTF-8 JSON。Service ID: `com.navypool.pairingtranslator.V1`
 
 ### 3.1 hello — 接続確立直後に双方向が送信
 

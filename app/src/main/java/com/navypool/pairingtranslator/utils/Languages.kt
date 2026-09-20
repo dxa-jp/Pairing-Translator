@@ -1,4 +1,4 @@
-package com.example.droidautoconnection.utils
+package com.navypool.pairingtranslator.utils
 
 data class LanguageInfo(
     val code: String,       // 言語コード (例: "ja")

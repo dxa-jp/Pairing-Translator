@@ -1,4 +1,4 @@
-package com.example.droidautoconnection.ui
+package com.navypool.pairingtranslator.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -48,10 +48,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.droidautoconnection.connection.PeerLinkManager
-import com.example.droidautoconnection.connection.SpeechEntry
-import com.example.droidautoconnection.utils.Languages
-import com.example.droidautoconnection.voice.VoiceState
+import com.navypool.pairingtranslator.connection.PeerLinkManager
+import com.navypool.pairingtranslator.connection.SpeechEntry
+import com.navypool.pairingtranslator.utils.Languages
+import com.navypool.pairingtranslator.voice.VoiceState
 
 // HS(翻訳サポ)準拠のカラー/サイズ
 private val HsBackground = Color(0xFFE8F0E8)

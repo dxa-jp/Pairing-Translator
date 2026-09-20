@@ -1,4 +1,4 @@
-package com.example.droidautoconnection
+package com.navypool.pairingtranslator
 
 import android.Manifest
 import android.content.Context

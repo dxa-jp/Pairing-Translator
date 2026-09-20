@@ -1,4 +1,4 @@
-package com.example.droidautoconnection.connection
+package com.navypool.pairingtranslator.connection
 
 import android.content.Context
 import android.os.Build
@@ -8,10 +8,10 @@ import android.provider.Settings
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import com.example.droidautoconnection.data.BackendClient
-import com.example.droidautoconnection.utils.Languages
-import com.example.droidautoconnection.voice.VoiceSessionManager
-import com.example.droidautoconnection.voice.VoiceState
+import com.navypool.pairingtranslator.data.BackendClient
+import com.navypool.pairingtranslator.utils.Languages
+import com.navypool.pairingtranslator.voice.VoiceSessionManager
+import com.navypool.pairingtranslator.voice.VoiceState
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.AdvertisingOptions
 import com.google.android.gms.nearby.connection.ConnectionInfo
@@ -63,7 +63,7 @@ class PeerLinkManager(private val context: Context) :
     )
 
     companion object {
-        const val SERVICE_ID = "com.example.droidautoconnection.SONIX_V1"
+        const val SERVICE_ID = "com.navypool.pairingtranslator.V1"
         val STRATEGY = Strategy.P2P_POINT_TO_POINT
         private const val PREFS = "poc_prefs"
         private const val KEY_DEVICE_ID = "device_id"
@@ -75,7 +75,7 @@ class PeerLinkManager(private val context: Context) :
         private const val FALLBACK_REQUEST_DELAY_MS = 4000L
         private const val HEARTBEAT_INTERVAL_MS = 10_000L
         private const val HEARTBEAT_TIMEOUT_MS = 25_000L
-        private const val TAG = "PocChat"
+        private const val TAG = "PairingTranslator"
     }
 
     var state by mutableStateOf(State.IDLE)

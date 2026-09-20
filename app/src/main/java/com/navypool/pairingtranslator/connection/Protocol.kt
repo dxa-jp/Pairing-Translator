@@ -1,4 +1,4 @@
-package com.example.droidautoconnection.connection
+package com.navypool.pairingtranslator.connection
 
 import org.json.JSONObject
 

@@ -1,4 +1,4 @@
-package com.example.droidautoconnection.connection
+package com.navypool.pairingtranslator.connection
 
 /**
  * 会話ビューの1エントリ。音声1発話分。
