@@ -44,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -118,15 +119,22 @@ fun ConversationScreen(
     }
 }
 
-/** HSのツールバーCard(80dp・角丸40・白カード)をComposeで再現したもの */
+/** HSのツールバーCard(80dp・角丸40)をComposeで再現したもの。Cardの色が状態を示す */
 @Composable
 private fun ToolbarCard(
     peerLink: PeerLinkManager,
     onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // HSのステータス色: 接続済み=シアン/探索中=淡グレー/停止・エラー=赤
+    val cardColor = when {
+        !peerLink.started -> Color(0xFFB23A18)
+        peerLink.voiceState == VoiceState.ERROR -> Color(0xFFB23A18)
+        peerLink.state == PeerLinkManager.State.CONNECTED -> Color(0xFF80DEEA)
+        else -> Color(0xFFF1F5F9)
+    }
     Surface(
-        color = HsCardWhite,
+        color = cardColor,
         shape = RoundedCornerShape(40.dp),
         shadowElevation = 12.dp,
         border = BorderStroke(1.dp, Color(0x4DFFFFFF)),
@@ -155,21 +163,20 @@ private fun ToolbarCard(
     }
 }
 
-/** 相手探索のON/OFF。HSの翻訳開始ボタンと同じ位置(ツールバー左端)に置くピル */
+/** 相手探索のON/OFF(状態表示兼用)。HSの翻訳開始ボタンと同じ位置(ツールバー左端)に置くピル */
 @Composable
 private fun SearchToggleButton(peerLink: PeerLinkManager) {
-    val (label, bg, content) = when {
-        !peerLink.started -> Triple("探索 OFF", Color(0xFFB23A18), Color.White)
-        peerLink.state == PeerLinkManager.State.CONNECTED ->
-            Triple("接続済み", Color(0xFF80DEEA), HsTextMain)
-        else -> Triple("探索中…", Color(0xFFF1F5F9), HsTextMain)
+    val label = when {
+        !peerLink.started -> "探索 OFF"
+        peerLink.voiceState == VoiceState.ERROR -> "音声エラー"
+        peerLink.state == PeerLinkManager.State.CONNECTED -> "接続済み"
+        else -> "探索中…"
     }
-    Surface(
-        color = bg,
-        shape = RoundedCornerShape(100),
-        shadowElevation = 6.dp,
+    Box(
         modifier = Modifier
+            .shadow(6.dp, RoundedCornerShape(100))
             .clip(RoundedCornerShape(100))
+            .background(HsPillWhite)
             .clickable { if (peerLink.started) peerLink.stop() else peerLink.start() },
     ) {
         Row(
@@ -181,11 +188,11 @@ private fun SearchToggleButton(peerLink: PeerLinkManager) {
             Icon(
                 Icons.Filled.Search,
                 contentDescription = null,
-                tint = content,
+                tint = HsTextMain,
                 modifier = Modifier.size(22.dp),
             )
             Spacer(Modifier.width(10.dp))
-            Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = content)
+            Text(label, fontSize = 16.sp, fontWeight = FontWeight.Bold, color = HsTextMain)
         }
     }
 }
@@ -197,12 +204,11 @@ private fun LanguagePill(peerLink: PeerLinkManager) {
     val info = Languages.list.firstOrNull { it.code == peerLink.myLang }
 
     Box {
-        Surface(
-            color = HsPillWhite,
-            shape = RoundedCornerShape(100),
-            shadowElevation = 6.dp,
+        Box(
             modifier = Modifier
+                .shadow(6.dp, RoundedCornerShape(100))
                 .clip(RoundedCornerShape(100))
+                .background(HsPillWhite)
                 .clickable { expanded = true },
         ) {
             Row(
@@ -241,17 +247,15 @@ private fun CircleIconButton(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    Surface(
-        color = HsPillWhite,
-        shape = CircleShape,
-        shadowElevation = 6.dp,
+    Box(
         modifier = modifier
             .size(49.dp)
+            .shadow(6.dp, CircleShape)
             .clip(CircleShape)
+            .background(HsPillWhite)
             .clickable(onClick = onClick),
-    ) {
-        Box(contentAlignment = Alignment.Center) { content() }
-    }
+        contentAlignment = Alignment.Center,
+    ) { content() }
 }
 
 @Composable
