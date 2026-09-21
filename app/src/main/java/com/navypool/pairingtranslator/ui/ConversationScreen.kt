@@ -2,6 +2,7 @@ package com.navypool.pairingtranslator.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -43,8 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -57,13 +58,18 @@ import com.navypool.pairingtranslator.voice.VoiceState
 // HS(翻訳サポ)準拠のカラー/サイズ
 private val HsBackground = Color(0xFFE8F0E8)
 private val HsCardWhite = Color(0xD9FFFFFF)
-private val HsPillWhite = Color(0xB8FFFFFF)
 private val HsTextMain = Color(0xFF1A1A1A)
 private val HsTextSub = Color(0xFF5F6368)
 private val HsMineBubble = Color(0xFF16302B)
 private val HsMineText = Color(0xFFEAFBF5)
 private val HsPeerBubble = Color(0xFFFFF4B0)
 private val HsPeerText = Color(0xFF0B2A6B)
+
+// ボタンの擬似エレベーション: 本端末のGPUではModifier.shadow()が白い八角形に
+// 化けるため、白→薄灰のグラデーション+細い境界線+手動の影で立体感を出す
+private val HsPillBrush = Brush.verticalGradient(listOf(Color(0xF0FFFFFF), Color(0xFFE7EDF5)))
+private val HsPillBorder = Color(0x335F6368)
+private val HsFakeShadow = Color(0x26000000)
 
 /**
  * メイン画面: 下部ツールバー(探索ON/OFF・自分の言語・設定) + チャット形式の会話ビュー。
@@ -173,18 +179,21 @@ private fun SearchToggleButton(peerLink: PeerLinkManager) {
         else -> "探索中…"
     }
     // NOTE: この端末(CP08_J1)ではModifier.shadow()が白い八角形として
-    // 描画されるため、ツールバー上のボタンには影を付けない。
-    // Card本体の影(shadowElevation=12)は正常に描画される。
-    Box(
-        modifier = Modifier
-            .clip(RoundedCornerShape(100))
-            .background(HsPillWhite)
-            .clickable { if (peerLink.started) peerLink.stop() else peerLink.start() },
-    ) {
+    // 描画されるため、代わりに半透明黒の「疑似影」とグラデーションで
+    // 立体感を出す。Card本体の影(shadowElevation=12)は正常に描画される。
+    Box {
+        Box(
+            Modifier
+                .matchParentSize()
+                .offset(y = 2.dp)
+                .background(HsFakeShadow, RoundedCornerShape(100)),
+        )
         Row(
             modifier = Modifier
-                .padding(horizontal = 14.dp)
-                .height(49.dp),
+                .background(HsPillBrush, RoundedCornerShape(100))
+                .border(1.dp, HsPillBorder, RoundedCornerShape(100))
+                .clickable { if (peerLink.started) peerLink.stop() else peerLink.start() }
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
@@ -207,26 +216,27 @@ private fun LanguagePill(peerLink: PeerLinkManager) {
 
     Box {
         Box(
+            Modifier
+                .matchParentSize()
+                .offset(y = 2.dp)
+                .background(HsFakeShadow, RoundedCornerShape(100)),
+        )
+        Row(
             modifier = Modifier
-                .clip(RoundedCornerShape(100))
-                .background(HsPillWhite)
-                .clickable { expanded = true },
+                .background(HsPillBrush, RoundedCornerShape(100))
+                .border(1.dp, HsPillBorder, RoundedCornerShape(100))
+                .clickable { expanded = true }
+                .padding(horizontal = 12.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 12.dp)
-                    .height(49.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(info?.flagEmoji ?: "🌐", fontSize = 20.sp)
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    info?.code?.uppercase() ?: peerLink.myLang,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = HsTextMain,
-                )
-            }
+            Text(info?.flagEmoji ?: "🌐", fontSize = 20.sp)
+            Spacer(Modifier.width(6.dp))
+            Text(
+                info?.code?.uppercase() ?: peerLink.myLang,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                color = HsTextMain,
+            )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             Languages.list.forEach { item ->
@@ -248,18 +258,22 @@ private fun CircleIconButton(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    // CircleShapeは一部端末で影が八角形ポリゴンとして描画されるため、
-    // 他のピルと同じRoundedCornerShape(100)を使う(49dp正方形なので見た目は円)
-    // TEMP検証中: shadowを一時的に無効化して比較する
-    Box(
-        modifier = modifier
-            .size(49.dp)
-            // .shadow(6.dp, RoundedCornerShape(100))
-            .clip(RoundedCornerShape(100))
-            .background(HsPillWhite)
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center,
-    ) { content() }
+    Box(modifier.size(49.dp)) {
+        Box(
+            Modifier
+                .matchParentSize()
+                .offset(y = 2.dp)
+                .background(HsFakeShadow, RoundedCornerShape(100)),
+        )
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(HsPillBrush, RoundedCornerShape(100))
+                .border(1.dp, HsPillBorder, RoundedCornerShape(100))
+                .clickable(onClick = onClick),
+            contentAlignment = Alignment.Center,
+        ) { content() }
+    }
 }
 
 @Composable
