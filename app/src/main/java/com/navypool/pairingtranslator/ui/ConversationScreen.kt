@@ -172,9 +172,11 @@ private fun SearchToggleButton(peerLink: PeerLinkManager) {
         peerLink.state == PeerLinkManager.State.CONNECTED -> "接続済み"
         else -> "探索中…"
     }
+    // NOTE: この端末(CP08_J1)ではModifier.shadow()が白い八角形として
+    // 描画されるため、ツールバー上のボタンには影を付けない。
+    // Card本体の影(shadowElevation=12)は正常に描画される。
     Box(
         modifier = Modifier
-            .shadow(6.dp, RoundedCornerShape(100))
             .clip(RoundedCornerShape(100))
             .background(HsPillWhite)
             .clickable { if (peerLink.started) peerLink.stop() else peerLink.start() },
@@ -206,7 +208,6 @@ private fun LanguagePill(peerLink: PeerLinkManager) {
     Box {
         Box(
             modifier = Modifier
-                .shadow(6.dp, RoundedCornerShape(100))
                 .clip(RoundedCornerShape(100))
                 .background(HsPillWhite)
                 .clickable { expanded = true },
@@ -247,11 +248,14 @@ private fun CircleIconButton(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
+    // CircleShapeは一部端末で影が八角形ポリゴンとして描画されるため、
+    // 他のピルと同じRoundedCornerShape(100)を使う(49dp正方形なので見た目は円)
+    // TEMP検証中: shadowを一時的に無効化して比較する
     Box(
         modifier = modifier
             .size(49.dp)
-            .shadow(6.dp, CircleShape)
-            .clip(CircleShape)
+            // .shadow(6.dp, RoundedCornerShape(100))
+            .clip(RoundedCornerShape(100))
             .background(HsPillWhite)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
