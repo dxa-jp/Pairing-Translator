@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.wifi.WifiManager
 import android.os.Build
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,8 +15,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -136,49 +133,36 @@ private fun buildDiagnostics(context: Context): Diagnostics {
 }
 
 @Composable
-fun LogViewer(logs: List<LogLine>, modifier: Modifier = Modifier) {
-    var expanded by remember { mutableStateOf(false) }
+fun DebugLogPanel(logs: List<LogLine>, modifier: Modifier = Modifier) {
     val listState = rememberLazyListState()
 
-    LaunchedEffect(logs.size, expanded) {
-        if (expanded && logs.isNotEmpty()) {
+    LaunchedEffect(logs.size) {
+        if (logs.isNotEmpty()) {
             listState.animateScrollToItem(logs.lastIndex)
         }
     }
 
     Surface(
-        color = Color(0xFF101418),
-        shape = MaterialTheme.shapes.small,
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp),
+        color = Color(0xCC000000),
+        shape = RoundedCornerShape(16.dp),
+        shadowElevation = 20.dp,
+        modifier = modifier.fillMaxWidth(),
     ) {
-        Column(Modifier.padding(8.dp)) {
-            Text(
-                if (expanded) "▼ ログ" else "▲ ログ (${logs.size}行)",
-                color = Color(0xFF9AB4C8),
-                fontSize = 13.sp,
-                modifier = Modifier.clickable { expanded = !expanded },
-            )
-            if (expanded) {
-                HorizontalDivider(color = Color(0xFF33414D), modifier = Modifier.padding(vertical = 4.dp))
-                LazyColumn(
-                    state = listState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp)
-                        .height(180.dp),
-                ) {
-                    items(logs) { line ->
-                        Text(
-                            "${line.time} ${line.text}",
-                            color = Color(0xFFC8D8E4),
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace,
-                            modifier = Modifier.padding(vertical = 1.dp),
-                        )
-                    }
-                }
+        LazyColumn(
+            state = listState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(220.dp)
+                .padding(12.dp),
+        ) {
+            items(logs) { line ->
+                Text(
+                    "${line.time} ${line.text}",
+                    color = Color(0xFF00FF00),
+                    fontSize = 14.sp,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(vertical = 1.dp),
+                )
             }
         }
     }

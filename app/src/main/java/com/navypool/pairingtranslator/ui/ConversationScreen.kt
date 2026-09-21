@@ -1,5 +1,8 @@
 package com.navypool.pairingtranslator.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -34,7 +37,6 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,9 +49,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.navypool.pairingtranslator.R
 import com.navypool.pairingtranslator.connection.PeerLinkManager
 import com.navypool.pairingtranslator.connection.SpeechEntry
 import com.navypool.pairingtranslator.utils.Languages
@@ -89,6 +93,8 @@ fun ConversationScreen(
         }
     }
 
+    var debugVisible by remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -96,32 +102,43 @@ fun ConversationScreen(
             .windowInsetsPadding(WindowInsets.systemBars.union(WindowInsets.displayCutout))
             .background(HsBackground),
     ) {
-        Column(Modifier.fillMaxSize()) {
-            StatusHeader(peerLink)
-            LogViewer(peerLink.logs)
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentPadding = PaddingValues(
-                    start = 16.dp, end = 16.dp, top = 8.dp, bottom = 120.dp,
-                ),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(peerLink.entries) { entry ->
-                    SpeechBubble(entry, peerLang = peerLink.peer?.lang)
-                }
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(
+                start = 16.dp, end = 16.dp, top = 8.dp,
+                bottom = if (debugVisible) 380.dp else 120.dp,
+            ),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(peerLink.entries) { entry ->
+                SpeechBubble(entry, peerLang = peerLink.peer?.lang)
             }
         }
 
-        ToolbarCard(
-            peerLink = peerLink,
-            onOpenSettings = onOpenSettings,
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-        )
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 24.dp),
+        ) {
+            AnimatedVisibility(
+                visible = debugVisible,
+                enter = expandVertically(expandFrom = Alignment.Bottom),
+                exit = shrinkVertically(shrinkTowards = Alignment.Bottom),
+            ) {
+                DebugLogPanel(
+                    logs = peerLink.logs,
+                    modifier = Modifier.padding(bottom = 12.dp),
+                )
+            }
+            ToolbarCard(
+                peerLink = peerLink,
+                onOpenSettings = onOpenSettings,
+                debugVisible = debugVisible,
+                onToggleDebug = { debugVisible = !debugVisible },
+            )
+        }
     }
 }
 
@@ -130,6 +147,8 @@ fun ConversationScreen(
 private fun ToolbarCard(
     peerLink: PeerLinkManager,
     onOpenSettings: () -> Unit,
+    debugVisible: Boolean,
+    onToggleDebug: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // HSのステータス色: 接続済み=シアン/探索中=淡グレー/停止・エラー=赤
@@ -155,7 +174,11 @@ private fun ToolbarCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            SearchToggleButton(peerLink)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                SearchToggleButton(peerLink)
+                Spacer(Modifier.width(12.dp))
+                DebugToggleButton(visible = debugVisible, onToggle = onToggleDebug)
+            }
             LanguagePill(peerLink)
             CircleIconButton(onClick = onOpenSettings) {
                 Icon(
@@ -165,6 +188,34 @@ private fun ToolbarCard(
                     modifier = Modifier.size(24.dp),
                 )
             }
+        }
+    }
+}
+
+/** デバッグログウィンドウの開閉ボタン(HSのbtnDebugLogToggle相当) */
+@Composable
+private fun DebugToggleButton(visible: Boolean, onToggle: () -> Unit) {
+    Box(Modifier.size(49.dp)) {
+        Box(
+            Modifier
+                .matchParentSize()
+                .offset(y = 2.dp)
+                .background(HsFakeShadow, RoundedCornerShape(100)),
+        )
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(HsPillBrush, RoundedCornerShape(100))
+                .border(1.dp, HsPillBorder, RoundedCornerShape(100))
+                .clickable(onClick = onToggle),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_bug_custom),
+                contentDescription = "デバッグログ",
+                tint = if (visible) Color(0xFF388E3C) else HsTextSub,
+                modifier = Modifier.size(24.dp),
+            )
         }
     }
 }
@@ -273,60 +324,6 @@ private fun CircleIconButton(
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) { content() }
-    }
-}
-
-@Composable
-private fun StatusHeader(peerLink: PeerLinkManager) {
-    val (label, color) = when (peerLink.state) {
-        PeerLinkManager.State.IDLE -> "停止" to Color(0xFF9E9E9E)
-        PeerLinkManager.State.SEARCHING -> "相手を探索中…" to Color(0xFFF57C00)
-        PeerLinkManager.State.CONNECTING -> "接続中…" to Color(0xFF1976D2)
-        PeerLinkManager.State.CONNECTED -> "接続済み" to Color(0xFF388E3C)
-    }
-    val voiceLabel = when (peerLink.voiceState) {
-        VoiceState.IDLE -> ""
-        VoiceState.REQUESTING_KEY -> "・キー取得中…"
-        VoiceState.LISTENING -> "・🎧音声認識中"
-        VoiceState.ERROR -> "・音声エラー"
-    }
-    val peer = peerLink.peer
-    val myDisplay = Languages.codeToDisplayMap[peerLink.myLang] ?: peerLink.myLang
-    val pairText = when {
-        peerLink.state == PeerLinkManager.State.CONNECTED && peer != null -> {
-            val peerDisplay = Languages.codeToDisplayMap[peer.lang] ?: peer.lang
-            "自分: $myDisplay → 相手: $peerDisplay  |  相手端末: ${peer.endpointName}"
-        }
-        else -> "自分: $myDisplay  |  同じアプリを起動した端末を自動で探します"
-    }
-
-    Surface(color = Color(0xCCF1F5F9)) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    modifier = Modifier
-                        .background(color, RoundedCornerShape(50))
-                        .padding(horizontal = 10.dp, vertical = 2.dp),
-                ) {
-                    Text(label + voiceLabel, color = Color.White, fontSize = 13.sp)
-                }
-                Text(
-                    "  サーバー: ${peerLink.serverState}",
-                    fontSize = 12.sp,
-                    color = HsTextSub,
-                )
-            }
-            Text(
-                pairText,
-                fontSize = 12.sp,
-                color = HsTextMain,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-        }
     }
 }
 
