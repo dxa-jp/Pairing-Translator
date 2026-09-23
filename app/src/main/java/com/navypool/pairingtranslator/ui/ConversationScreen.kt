@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -346,7 +347,8 @@ private fun SpeechBubble(entry: SpeechEntry, peerLang: String?) {
     val primary = if (entry.mine) entry.original else entry.translation.ifEmpty { entry.original }
     val secondary = if (entry.mine) entry.translation else entry.original
 
-    Box(
+    // 吹き出しは画面幅の最大8割まで拡大する
+    BoxWithConstraints(
         Modifier.fillMaxWidth(),
         contentAlignment = if (entry.mine) Alignment.CenterEnd else Alignment.CenterStart,
     ) {
@@ -358,7 +360,7 @@ private fun SpeechBubble(entry: SpeechEntry, peerLang: String?) {
                 bottomStart = if (entry.mine) 12.dp else 2.dp,
                 bottomEnd = if (entry.mine) 2.dp else 12.dp,
             ),
-            modifier = Modifier.widthIn(max = 480.dp),
+            modifier = Modifier.widthIn(max = maxWidth * 0.8f),
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
                 Text(
