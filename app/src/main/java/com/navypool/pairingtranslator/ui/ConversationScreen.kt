@@ -292,7 +292,7 @@ private fun LanguagePill(peerLink: PeerLinkManager) {
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             Languages.list.forEach { item ->
                 DropdownMenuItem(
-                    text = { Text("${item.flagEmoji} ${item.displayName}", fontSize = 14.sp) },
+                    text = { Text(item.displayName, fontSize = 14.sp) },
                     onClick = {
                         peerLink.myLang = item.code
                         expanded = false
