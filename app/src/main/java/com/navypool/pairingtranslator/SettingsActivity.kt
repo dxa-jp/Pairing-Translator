@@ -5,12 +5,15 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.os.Bundle
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -22,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
@@ -44,13 +48,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.core.view.WindowCompat
+import com.google.zxing.BarcodeFormat
+import com.google.zxing.qrcode.QRCodeWriter
+import com.journeyapps.barcodescanner.ScanContract
+import com.journeyapps.barcodescanner.ScanOptions
 import com.navypool.pairingtranslator.data.BackendClient
 import com.navypool.pairingtranslator.ui.DiagnosticsDebugCard
 
@@ -119,6 +130,53 @@ private fun SettingsScreen(onBack: () -> Unit, onEnableBluetooth: () -> Unit) {
     }
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
 
+    var pairingKey by remember {
+        mutableStateOf(prefs.getString("pairing_key", null)?.trim().orEmpty())
+    }
+    var showQrDialog by remember { mutableStateOf(false) }
+
+    val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
+        val scanned = result.contents?.trim().orEmpty()
+        val key = scanned.filter { it.isLetterOrDigit() || it == '-' || it == '_' }.take(16)
+        if (key.isEmpty()) {
+            Toast.makeText(context, "読み取った値をキーとして使えません", Toast.LENGTH_SHORT).show()
+        } else {
+            savePairingKey(prefs, key)
+            pairingKey = key
+            Toast.makeText(context, "ペアリングキーを更新しました", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun launchQrScanner() {
+        scanLauncher.launch(
+            ScanOptions().apply {
+                setDesiredBarcodeFormats(ScanOptions.QR_CODE)
+                setPrompt("ペアリングキーのQRコードを読み取ってください")
+                setBeepEnabled(true)
+                setOrientationLocked(true)
+                setCaptureActivity(PortraitCaptureActivity::class.java)
+            },
+        )
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) {
+            launchQrScanner()
+        } else {
+            Toast.makeText(context, "カメラの権限が必要です", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun checkCameraPermissionAndScan() {
+        val granted = androidx.core.content.ContextCompat.checkSelfPermission(
+            context,
+            android.Manifest.permission.CAMERA,
+        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+        if (granted) launchQrScanner() else cameraPermissionLauncher.launch(android.Manifest.permission.CAMERA)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -177,6 +235,41 @@ private fun SettingsScreen(onBack: () -> Unit, onEnableBluetooth: () -> Unit) {
                 Text("デフォルトに戻す")
             }
 
+            SectionHeader("▼ ペアリング")
+            Text(
+                "ペアリングする端末同士で同じキーを設定してください（空欄の場合は、このアプリを持つすべての端末とペアリングできます）。変更は探索のOFF/ONで反映されます。",
+                fontSize = 13.sp,
+                color = HsTextSub,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    pairingKey.ifBlank { "(キーなし)" },
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Monospace,
+                    color = HsTextMain,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = {
+                    val newKey = generatePairingKey()
+                    savePairingKey(prefs, newKey)
+                    pairingKey = newKey
+                    Toast.makeText(context, "新しいキーを生成しました", Toast.LENGTH_SHORT).show()
+                }) {
+                    Text("生成")
+                }
+                TextButton(
+                    enabled = pairingKey.isNotBlank(),
+                    onClick = { showQrDialog = true },
+                ) {
+                    Text("QR表示")
+                }
+                TextButton(onClick = { checkCameraPermissionAndScan() }) {
+                    Text("スキャン")
+                }
+            }
+
             SectionHeader("▼ デバイス")
             Text("デバイスID (管理画面の端末承認に使用)", fontSize = 13.sp, color = HsTextSub)
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -199,7 +292,66 @@ private fun SettingsScreen(onBack: () -> Unit, onEnableBluetooth: () -> Unit) {
             DiagnosticsDebugCard(onEnableBluetooth = onEnableBluetooth)
             Spacer(Modifier.height(32.dp))
         }
+
+        if (showQrDialog && pairingKey.isNotBlank()) {
+            val qrBitmap = remember(pairingKey) { generateQrBitmap(pairingKey, 560) }
+            Dialog(onDismissRequest = { showQrDialog = false }) {
+                Surface(
+                    color = Color.White,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.padding(24.dp),
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            "ペアリングキー",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = HsTextMain,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            pairingKey,
+                            fontFamily = FontFamily.Monospace,
+                            fontSize = 18.sp,
+                            color = HsTextMain,
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Image(
+                            bitmap = qrBitmap.asImageBitmap(),
+                            contentDescription = "ペアリングキーのQRコード",
+                            modifier = Modifier.size(280.dp),
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        Text("相手端末の「スキャン」で読み取ってください", fontSize = 13.sp, color = HsTextSub)
+                    }
+                }
+            }
+        }
     }
+}
+
+private fun generatePairingKey(): String {
+    // 紛らわしい文字(0/O/1/I/L)を除いた英数字から8文字生成
+    val alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+    return (1..8).map { alphabet.random() }.joinToString("")
+}
+
+private fun savePairingKey(prefs: android.content.SharedPreferences, key: String) {
+    prefs.edit().putString("pairing_key", key).apply()
+}
+
+private fun generateQrBitmap(text: String, size: Int): Bitmap {
+    val matrix = QRCodeWriter().encode(text, BarcodeFormat.QR_CODE, size, size)
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.RGB_565)
+    for (x in 0 until size) {
+        for (y in 0 until size) {
+            bitmap.setPixel(x, y, if (matrix[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE)
+        }
+    }
+    return bitmap
 }
 
 @Composable

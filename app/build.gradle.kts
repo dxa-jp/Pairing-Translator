@@ -12,8 +12,8 @@ android {
         applicationId = "com.navypool.pairingtranslator"
         minSdk = 26
         targetSdk = 36
-        versionCode = 7
-        versionName = "0.2.6"
+        versionCode = 8
+        versionName = "0.2.7"
     }
 
     buildTypes {
@@ -48,4 +48,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.okhttp)
     implementation(libs.play.services.nearby)
+    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
 }

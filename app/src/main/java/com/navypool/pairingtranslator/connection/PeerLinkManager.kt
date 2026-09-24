@@ -68,6 +68,7 @@ class PeerLinkManager(private val context: Context) :
         private const val PREFS = "poc_prefs"
         private const val KEY_DEVICE_ID = "device_id"
         private const val KEY_MY_LANG = "my_lang"
+        private const val KEY_PAIRING_KEY = "pairing_key"
         private const val MAX_LOG_LINES = 300
         private const val MAX_ENTRIES = 500
         private const val MAX_REQUEST_ATTEMPTS = 3
@@ -120,6 +121,13 @@ class PeerLinkManager(private val context: Context) :
         }
     }
 
+    /** 設定のペアリングキー(空欄なら制限なし)を反映したSERVICE_ID。
+     *  キーが同じ端末同士のみ発見し合える(設定画面の「▼ ペアリング」で生成/スキャン) */
+    private fun currentServiceId(): String {
+        val key = prefs.getString(KEY_PAIRING_KEY, null)?.trim().orEmpty()
+        return if (key.isEmpty()) SERVICE_ID else "$SERVICE_ID-$key"
+    }
+
     private val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     private val client: ConnectionsClient = Nearby.getConnectionsClient(context)
     private val voice = VoiceSessionManager(context, this)
@@ -157,7 +165,7 @@ class PeerLinkManager(private val context: Context) :
         started = true
         retryCount = 0
         state = State.SEARCHING
-        log("開始: advertise + discover (service=$SERVICE_ID)")
+        log("開始: advertise + discover (service=${currentServiceId()})")
         registerIfNeeded()
         restartSessions()
     }
@@ -239,7 +247,7 @@ class PeerLinkManager(private val context: Context) :
     private fun startAdvertising() {
         client.startAdvertising(
             myEndpointName,
-            SERVICE_ID,
+            currentServiceId(),
             connectionLifecycleCallback,
             AdvertisingOptions.Builder().setStrategy(STRATEGY).build(),
         ).addOnSuccessListener {
@@ -251,7 +259,7 @@ class PeerLinkManager(private val context: Context) :
 
     private fun startDiscovery() {
         client.startDiscovery(
-            SERVICE_ID,
+            currentServiceId(),
             endpointDiscoveryCallback,
             DiscoveryOptions.Builder().setStrategy(STRATEGY).build(),
         ).addOnSuccessListener {
