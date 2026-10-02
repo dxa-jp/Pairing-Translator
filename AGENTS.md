@@ -2,6 +2,13 @@
 
 Repository instructions for AI assistants working on the **ペアリング翻訳 (`PairingTranslator`)** project: two nearby Android devices connect over Google Play Services **Nearby Connections** (P2P) and stream speech to **Soniox** for real-time translation.
 
+## Translation Family
+
+Lineage: parent `D:\HonyakuSapo` (representative) → this repo (child, client-only). Sibling: `D:\MultiTranslator`, which owns the backend this app calls; `D:\MultiTranslatorFork` is MultiTranslator's grandchild test bed on the same backend.
+
+- The API contract consumed here (`/api/device_auth.php`, `/api/temp_key.php` with `duration` / `expires_in_seconds` / `expires_at`, error payloads) is baselined in the parent's `D:\HonyakuSapo\specs\` and implemented by `D:\MultiTranslator` (authoritative for its backend).
+- Changes touching the shared contract are made in the parent or MultiTranslator first; this repo **adapts to them** and never changes the contract from this side (consistent with the no-server-modification rule below).
+
 ## Identity & Rules
 
 - **applicationId**: `com.navypool.pairingtranslator` (v0.2.5+; older v0.2.4 and below used a different ID and coexist as a separate app). Single build, no productFlavors.
