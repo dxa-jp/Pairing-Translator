@@ -23,11 +23,11 @@
 
 | 項目 | 値 |
 |---|---|
-| リクエスト | `device_id`, `duration`(分、現在は "60"。サーバー側は実効1時間で固定発行) |
-| 成功 | `{"success": true, "temp_api_key": "snx_tmp_...", "model": "<サーバー設定のモデル名>"}` |
+| リクエスト | `device_id`, `duration`(分、1〜60。設定画面「一時キー有効時間」で指定、既定60。未指定時は3600秒) |
+| 成功 | `{"success": true, "temp_api_key": "snx_tmp_...", "expires_in_seconds": 900, "expires_at": "2026-09-26T01:15:26.000Z", "model": "stt-rt-v5"}` |
 | 拒否 | `error_code`: `DEVICE_NOT_FOUND` / `DEVICE_NOT_APPROVED` / `QUOTA_EXCEEDED` + `message` |
 
-- キーの有効期間: 約1時間。アプリは55分ごとにローテーションする
+- キーの有効期間: 設定画面で指定した時間(1〜60分、既定60)。アプリは有効期限の5分前をめどにローテーションする
 - 発行履歴はサーバーの `temp_key_history` に記録される
 
 ## 2. Soniox WebSocket API(アプリの利用範囲)

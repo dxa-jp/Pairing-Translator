@@ -28,8 +28,10 @@ enum class VoiceState { IDLE, REQUESTING_KEY, LISTENING, ERROR }
  * 常時リスニング音声セッションの管理。
  * - サーバーからSoniox一時キーを取得してWebSocketセッションを張る
  * - 16kHz PCMモノラルでマイクを読み、Sonioxへ常時送信する
- * - 一時キー(実効1時間)とSonioxストリーム上限(300分)に備え、55分ごとに
- *   セッションを張り直す
+ * - 設定画面で指定した有効時間の一時キーを取得してWebSocketセッションを張る
+ * - 16kHz PCMモノラルでマイクを読み、Sonioxへ常時送信する
+ * - 一時キーの失効とSonioxストリーム上限(300分)に備え、有効時間の5分前を
+ *   目安にセッションを張り直す
  * - Sonioxとの切断やキー取得の一時的失敗からは、バックオフ再接続で
  *   自動復旧する(ネットワーク回復まで最大60秒間隔で再試行)
  * - 相手との接続が切れたらpause()で止め、再接続時にstart()で再開する
@@ -50,11 +52,13 @@ class VoiceSessionManager(
     companion object {
         private const val TAG = "PairingTranslator"
         private const val SAMPLE_RATE = 16000
-        private const val ROTATION_MINUTES = 55L
+        private const val DEFAULT_DURATION_MINUTES = 60L
         private const val KEY_REFRESH_MARGIN_MS = 5 * 60 * 1000L
         private const val RECONNECT_BASE_DELAY_MS = 2_000L
         private const val RECONNECT_MAX_DELAY_MS = 60_000L
     }
+
+    private val prefs = context.getSharedPreferences("poc_prefs", Context.MODE_PRIVATE)
 
     var state: VoiceState = VoiceState.IDLE
         private set(value) {
@@ -73,7 +77,12 @@ class VoiceSessionManager(
     private var targetLang: String = "en"
     private var deviceId: String = ""
     private var keyFetchedAt: Long = 0
+    private var keyGrantedSeconds: Long = DEFAULT_DURATION_MINUTES * 60
     @Volatile private var running = false
+
+    /** 設定画面で指定した一時キー有効時間(分)。1〜60に制限 */
+    private fun durationMinutes(): Int =
+        prefs.getInt("temp_key_duration_minutes", 60).coerceIn(1, 60)
 
     /** 相手と接続したら呼ぶ。既に動作中なら言語変更がなければ何もしない */
     fun start(source: String, target: String, deviceId: String) {
@@ -105,11 +114,16 @@ class VoiceSessionManager(
     private suspend fun startSession() {
         if (!running) return
 
-        val keyResult = BackendClient.fetchTempKey(deviceId)
+        val keyResult = BackendClient.fetchTempKey(deviceId, durationMinutes())
         if (!running) return
         when (keyResult) {
             is BackendClient.KeyResult.Ok -> {
                 keyFetchedAt = System.currentTimeMillis()
+                keyGrantedSeconds = if (keyResult.expiresInSeconds > 0) {
+                    keyResult.expiresInSeconds
+                } else {
+                    durationMinutes() * 60L
+                }
                 startListening(keyResult.key, keyResult.model)
             }
             is BackendClient.KeyResult.Rejected -> {
@@ -168,7 +182,8 @@ class VoiceSessionManager(
     private fun scheduleRotation() {
         rotationJob?.cancel()
         rotationJob = scope.launch {
-            delay(ROTATION_MINUTES * 60 * 1000)
+            val rotateAfterMs = ((keyGrantedSeconds - KEY_REFRESH_MARGIN_MS / 1000).coerceAtLeast(60)) * 1000
+            delay(rotateAfterMs)
             if (!running) return@launch
             Log.d(TAG, "セッションローテーション: 張り直します")
             stopCapture()
@@ -192,7 +207,7 @@ class VoiceSessionManager(
     /** キー失効や切断からセッションを張り直す */
     private fun restartDueToKeyExpiry() {
         val elapsed = System.currentTimeMillis() - keyFetchedAt
-        if (elapsed >= 60 * 60 * 1000 - KEY_REFRESH_MARGIN_MS) {
+        if (elapsed >= keyGrantedSeconds * 1000 - KEY_REFRESH_MARGIN_MS) {
             // キー失効による切断。新キーを取得して即座に張り直す
             scope.launch {
                 pause()

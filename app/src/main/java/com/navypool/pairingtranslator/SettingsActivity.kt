@@ -134,6 +134,9 @@ private fun SettingsScreen(onBack: () -> Unit, onEnableBluetooth: () -> Unit) {
         mutableStateOf(prefs.getString("pairing_key", null)?.trim().orEmpty())
     }
     var showQrDialog by remember { mutableStateOf(false) }
+    var durationMinutesText by remember {
+        mutableStateOf(prefs.getInt("temp_key_duration_minutes", 60).toString())
+    }
 
     val scanLauncher = rememberLauncherForActivityResult(ScanContract()) { result ->
         val scanned = result.contents?.trim().orEmpty()
@@ -234,6 +237,24 @@ private fun SettingsScreen(onBack: () -> Unit, onEnableBluetooth: () -> Unit) {
             }) {
                 Text("デフォルトに戻す")
             }
+
+            Spacer(Modifier.height(16.dp))
+            Text("一時キー有効時間（分）", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = HsTextMain)
+            OutlinedTextField(
+                value = durationMinutesText,
+                onValueChange = { text ->
+                    durationMinutesText = text.filter { it.isDigit() }.take(2)
+                    prefs.edit().putInt("temp_key_duration_minutes", durationMinutesText.toIntOrNull() ?: 60).apply()
+                },
+                label = { Text("1〜60") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Text(
+                "一時キーはこの時間で発行されます。変更は次のキー取得から反映されます。",
+                fontSize = 13.sp,
+                color = HsTextSub,
+            )
 
             SectionHeader("▼ ペアリング")
             Text(

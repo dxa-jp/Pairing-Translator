@@ -31,7 +31,12 @@ object BackendClient {
 
     /** 一時キー取得の結果 */
     sealed class KeyResult {
-        data class Ok(val key: String, val model: String) : KeyResult()
+        data class Ok(
+            val key: String,
+            val model: String,
+            val expiresInSeconds: Long,
+            val expiresAt: String?,
+        ) : KeyResult()
         data class Rejected(val errorCode: String?, val message: String?) : KeyResult()
         data class Error(val message: String) : KeyResult()
     }
@@ -63,11 +68,11 @@ object BackendClient {
         }
     }
 
-    /** Soniox一時APIキーを取得する(実効1時間・サーバー側固定) */
-    suspend fun fetchTempKey(deviceId: String): KeyResult = withContext(Dispatchers.IO) {
+    /** Soniox一時APIキーを取得する。durationMinutes は鍵の有効時間(分、1〜60) */
+    suspend fun fetchTempKey(deviceId: String, durationMinutes: Int): KeyResult = withContext(Dispatchers.IO) {
         val body = FormBody.Builder()
             .add("device_id", deviceId)
-            .add("duration", "60")
+            .add("duration", durationMinutes.coerceIn(1, 60).toString())
             .build()
         val request = Request.Builder()
             .url(baseUrl + "api/temp_key.php")
@@ -78,12 +83,14 @@ object BackendClient {
         }
         val key = json.optNullableString("temp_api_key")
         val model = (json.opt("model") as? String)?.trim()
+        val expiresInSeconds = if (json.has("expires_in_seconds")) json.optLong("expires_in_seconds", 0L) else 0L
+        val expiresAt = json.optNullableString("expires_at")
         when {
             json.optBoolean("success") && !key.isNullOrEmpty() -> {
                 if (model.isNullOrEmpty()) {
                     KeyResult.Error("一時キーAPIの応答に有効なモデル名がありません")
                 } else {
-                    KeyResult.Ok(key, model)
+                    KeyResult.Ok(key, model, expiresInSeconds, expiresAt)
                 }
             }
             else -> KeyResult.Rejected(
