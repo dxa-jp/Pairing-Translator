@@ -18,7 +18,8 @@ data class SpeechEntry(
 ) {
     companion object {
         fun system(text: String) = SpeechEntry(
-            id = "system",
+            // 会話ビューのLazyColumnがkeyに使うため、システムメッセージごとに一意なidが必要
+            id = "system-${System.nanoTime()}",
             original = text,
             translation = "",
             mine = false,
