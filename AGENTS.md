@@ -22,6 +22,7 @@ Lineage: parent `D:\HonyakuSapo` (representative) → this repo (child, client-o
 - Versioned test APKs (`ペアリング翻訳-vX.Y.Z-test.apk`) live in the repo root (gitignored, debug-signed, same-ID overwrite install).
 - Real-device test procedure: [TESTING.md](TESTING.md). Server-side device approval via the MultiTranslator admin UI is required before use.
 - Known lint issue: existing `InvalidFragmentVersionForActivityResult` warning.
+- AppLab distribution: `bash /d/AppLab/tools/applab-push app/build/outputs/apk/debug/app-debug.apk --note "..."` (internal site `https://app.x-tools.biz`, bundle ID `com.navypool.pairingtranslator`). Draft a tester-facing Japanese summary, confirm with the user, and pass it via `--note`; omitting `--note` auto-generates it from git history (feat/fix/perf since the last push, recorded in `.applab-state.json` — keep it gitignored). Preview with `--dry-run`.
 
 ## Git
 
