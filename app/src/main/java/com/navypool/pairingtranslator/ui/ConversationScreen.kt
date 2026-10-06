@@ -67,10 +67,13 @@ private val HsBackground = Color(0xFFE8F0E8)
 private val HsCardWhite = Color(0xD9FFFFFF)
 private val HsTextMain = Color(0xFF1A1A1A)
 private val HsTextSub = Color(0xFF5F6368)
-private val HsMineBubble = Color(0xFF16302B)
-private val HsMineText = Color(0xFFEAFBF5)
-private val HsPeerBubble = Color(0xFFFFF4B0)
-private val HsPeerText = Color(0xFF0B2A6B)
+// 吹き出し: 自分=水色 / 相手=オレンジ。テキストは共通の濃色
+private val HsMineBubble = Color(0xFFA8D9F0)
+private val HsMineText = Color(0xFF29373D)
+private val HsPeerBubble = Color(0xFFFEC46D)
+private val HsPeerText = Color(0xFF29373D)
+private val HsBubbleSubText = Color(0x9929373D)      // 副表記(訳文/原文)
+private val HsBubbleHintText = Color(0x8029373D)     // 「認識中…」
 
 // ボタンの擬似エレベーション: 本端末のGPUではModifier.shadow()が白い八角形に
 // 化けるため、白→薄灰のグラデーション+細い境界線+手動の影で立体感を出す
@@ -427,14 +430,14 @@ private fun SpeechBubble(entry: SpeechEntry, peerLang: String?) {
                     Text(
                         secondary,
                         fontSize = 24.sp,
-                        color = if (entry.mine) Color(0x99EAFBF5) else Color(0x990B2A6B),
+                        color = HsBubbleSubText,
                     )
                 }
                 if (!entry.final) {
                     Text(
                         "認識中…",
                         fontSize = 14.sp,
-                        color = if (entry.mine) Color(0x80EAFBF5) else Color(0x800B2A6B),
+                        color = HsBubbleHintText,
                     )
                 }
             }
