@@ -1,6 +1,9 @@
 package com.navypool.pairingtranslator.connection
 
 import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
+import android.net.NetworkCapabilities
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -44,11 +47,15 @@ import kotlin.random.Random
  *
  * - 両端末ともadvertise+discoverを同時実行し、onConnectionInitiatedで即accept(操作ゼロ)
  * - 接続確立後、HELLOで互いの入力言語を交換する
- * - 互いの言語が揃った時点でVoiceSessionManager(サーバーからキー取得→
- *   マイク常時リスニング→Soniox翻訳)を開始する
+ * - 翻訳はSonioxボタンで開始/停止する(タップで両端末へ適用)。開始時は
+ *   VoiceSessionManager(キー取得→マイク常時リスニング→Soniox翻訳)を使い、
+ *   どちらか一方でもSoniox接続に失敗したら両端末停止して初期状態へ戻す
  * - 自分の発話の確定結果(原文+訳文)はspeechパケットとして相手へ送信する
  * - 切断時は音声を止めてadvertise/discoverを自動再開する
  */
+/** Soniox翻訳セッションの進行状態。STARTINGはキー取得〜Soniox接続完了まで */
+enum class TranslationPhase { STOPPED, STARTING, RUNNING }
+
 class PeerLinkManager(private val context: Context) :
     VoiceSessionManager.Listener {
 
@@ -76,6 +83,10 @@ class PeerLinkManager(private val context: Context) :
         private const val FALLBACK_REQUEST_DELAY_MS = 4000L
         private const val HEARTBEAT_INTERVAL_MS = 10_000L
         private const val HEARTBEAT_TIMEOUT_MS = 25_000L
+        /** 相手の翻訳開始処理に対する猶予。この時間内に tack が来なければ失敗扱いにする */
+        private const val REMOTE_ACK_TIMEOUT_MS = 30_000L
+        /** 開始処理全体(キー取得+Soniox接続)のハードタイムアウト */
+        private const val START_TIMEOUT_MS = 45_000L
         private const val TAG = "PairingTranslator"
     }
 
@@ -90,6 +101,14 @@ class PeerLinkManager(private val context: Context) :
     var serverState by mutableStateOf("未確認")
         private set
     var voiceState by mutableStateOf(VoiceState.IDLE)
+        private set
+
+    /** 翻訳セッションの進行状態(Sonioxボタンの表示/無効化に使う) */
+    var translationPhase by mutableStateOf(TranslationPhase.STOPPED)
+        private set
+
+    /** インターネット到達性(検証済みネットワークがあるか)。右カラムの背景表示に使う */
+    var online by mutableStateOf(true)
         private set
 
     /** 相手探索が有効か(メイン画面のON/OFFピルの状態)。stop()でfalse、start()でtrue */
@@ -140,11 +159,33 @@ class PeerLinkManager(private val context: Context) :
     private var lastIncomingAt = 0L
     private var serverApproved = false
 
+    // --- 翻訳開始/停止の調停状態 ---
+
+    /** 自分の開始処理の結果(STARTING中のみnull=未確定) */
+    private var ownStartOk: Boolean? = null
+
+    /** 相手の開始処理の結果(tackで受領。開始者だけが待つ) */
+    private var peerStartOk: Boolean? = null
+
+    /** リモート指示で開始した場合に、完了時に応答すべき tack の seq */
+    private var pendingRemoteSeq: Int? = null
+    private var translationSeq = 0
+    private var startWatchdog: Job? = null
+    private var remoteAckWatchdog: Job? = null
+
+    private val connectivityManager = context.getSystemService(ConnectivityManager::class.java)
+
     // 自分の発話の途中表示。受信するスナップショットで置き換える。
     private var liveEntryId: String? = null
 
     private val timeFmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
     private val mainHandler = Handler(Looper.getMainLooper())
+
+    // mainHandlerの初期化が終わってから登録する(コールバックがonMainThread経由で
+    // mainHandlerにpostするため、初期化順が前だと起動直後のonAvailableでNPEになる)
+    init {
+        registerNetworkCallback()
+    }
 
     /** 音声リスナーはOkHttpスレッドからも呼ばれるため、UI状態の更新は必ずメインスレッドで行う */
     private fun onMainThread(block: () -> Unit) {
@@ -196,6 +237,7 @@ class PeerLinkManager(private val context: Context) :
     fun stop() {
         started = false
         heartbeatJob?.cancel()
+        resetTranslationState()
         voice.shutdown()
         runCatching { client.stopAdvertising() }
         runCatching { client.stopDiscovery() }
@@ -204,6 +246,199 @@ class PeerLinkManager(private val context: Context) :
         peer = null
         state = State.IDLE
         log("停止")
+    }
+
+    // --- 翻訳開始/停止(MultiTranslatorのbtnAction相当・CONTINUEなし) ---
+
+    /**
+     * Sonioxボタンのタップ。停止中なら両端末で翻訳を開始し、翻訳中なら両端末で停止する。
+     * STARTING(キー取得〜Soniox接続〜相手の応答待ち)の間はボタンが無効になるため
+     * 処理完了前の再タップは発生しない。
+     */
+    fun toggleTranslation() {
+        when (translationPhase) {
+            TranslationPhase.STOPPED -> beginStart(fromRemote = false)
+            TranslationPhase.STARTING -> Unit // 無効化されているはず(保険)
+            TranslationPhase.RUNNING -> stopTranslation()
+        }
+    }
+
+    /**
+     * 翻訳開始処理を開始する。自分が開始者の場合は相手へtcmd(start)を送り、
+     * 自分と相手の両方がSonioxに接続できた時点でRUNNINGになる。
+     * どちらかが失敗したら(または相手の応答が猶予内になければ)両方停止して初期状態へ戻す。
+     */
+    private fun beginStart(fromRemote: Boolean, remoteSeq: Int? = null) {
+        if (translationPhase != TranslationPhase.STOPPED) return
+        val peerInfo = peer ?: return
+        translationPhase = TranslationPhase.STARTING
+        ownStartOk = null
+        peerStartOk = null
+        log("翻訳開始処理(${if (fromRemote) "相手の指示" else "ローカル"}) myLang=$myLang peerLang=${peerInfo.lang}")
+        if (fromRemote) {
+            pendingRemoteSeq = remoteSeq
+        } else {
+            // 相手にも開始を依頼する。応答はREMOTE_ACK_TIMEOUT_MSまで待つ(猶予)
+            sendTranslationCommand("start")
+            remoteAckWatchdog = scope.launch {
+                delay(REMOTE_ACK_TIMEOUT_MS)
+                if (translationPhase == TranslationPhase.STARTING && peerStartOk == null) {
+                    log("相手の開始応答が${REMOTE_ACK_TIMEOUT_MS / 1000}秒間ないため失敗扱いにします")
+                    peerStartOk = false
+                    evaluateStartOutcome()
+                }
+            }
+        }
+        // キー取得やSoniox接続がいつまでも終わらない場合の保険
+        startWatchdog = scope.launch {
+            delay(START_TIMEOUT_MS)
+            if (translationPhase == TranslationPhase.STARTING) {
+                log("翻訳開始処理が${START_TIMEOUT_MS / 1000}秒で完了しないため中止します")
+                if (ownStartOk == null) ownStartOk = false
+                if (peerStartOk == null) peerStartOk = false
+                evaluateStartOutcome()
+            }
+        }
+        voice.start(myLang, peerInfo.lang, myDeviceId)
+    }
+
+    /** 翻訳中なら両端末で停止する。ローカルの停止は即時完了のため無効時間は実質ゼロ */
+    fun stopTranslation() {
+        if (translationPhase == TranslationPhase.STOPPED) return
+        resetTranslationState()
+        voice.pause()
+        sendTranslationCommand("stop")
+        log("翻訳停止")
+    }
+
+    /** 開始処理を中断して両端末を初期状態へ戻す */
+    private fun rollbackStart(reason: String) {
+        log("翻訳開始失敗 → 両端末停止して初期状態に戻します($reason)")
+        resetTranslationState()
+        voice.pause()
+        sendTranslationCommand("stop")
+        addEntry(SpeechEntry.system("Sonioxに接続できませんでした。両端末の翻訳を停止しました($reason)"))
+    }
+
+    /** 翻訳セッションの状態をすべて初期化する(切断・停止時に呼ぶ) */
+    private fun resetTranslationState() {
+        startWatchdog?.cancel()
+        startWatchdog = null
+        remoteAckWatchdog?.cancel()
+        remoteAckWatchdog = null
+        pendingRemoteSeq = null
+        ownStartOk = null
+        peerStartOk = null
+        translationPhase = TranslationPhase.STOPPED
+    }
+
+    /** 自分の開始処理が確定したら、開始者/被開始者それぞれの後処理に分岐する */
+    private fun onOwnStartConcluded(ok: Boolean) {
+        val seq = pendingRemoteSeq
+        startWatchdog?.cancel()
+        startWatchdog = null
+        if (seq != null) {
+            // 相手の指示で開始した: 自分の結果を報告する。ペア全体の成否は開始者がとりまとめる
+            pendingRemoteSeq = null
+            sendTranslationAck(seq, "start", ok = ok, msg = if (ok) "" else "Soniox接続に失敗")
+            if (ok) {
+                translationPhase = TranslationPhase.RUNNING
+                log("翻訳開始(相手の指示に応じてSoniox接続)")
+            } else {
+                voice.pause() // VSMの自動再接続を止めて初期状態へ
+                translationPhase = TranslationPhase.STOPPED
+            }
+        } else {
+            // 自分が開始者: 相手の応答と揃った時点で判定する
+            ownStartOk = ok
+            evaluateStartOutcome()
+        }
+    }
+
+    /** 開始者のみ。自分と相手の開始結果が両方揃ったら開始/ロールバックを判定する */
+    private fun evaluateStartOutcome() {
+        if (translationPhase != TranslationPhase.STARTING) return
+        val own = ownStartOk ?: return
+        val remote = peerStartOk ?: return
+        remoteAckWatchdog?.cancel()
+        remoteAckWatchdog = null
+        startWatchdog?.cancel()
+        startWatchdog = null
+        if (own && remote) {
+            translationPhase = TranslationPhase.RUNNING
+            log("翻訳開始: 両端末がSonioxに接続しました")
+        } else {
+            rollbackStart(if (own) "相手側の失敗" else "自端末の失敗")
+        }
+    }
+
+    private fun handleTranslationCommand(action: String, seq: Int) {
+        when (action) {
+            "start" -> when (translationPhase) {
+                TranslationPhase.STOPPED -> beginStart(fromRemote = true, remoteSeq = seq)
+                else -> {
+                    // 開始中/翻訳中なら要求は実質満たされている
+                    sendTranslationAck(seq, action, ok = true)
+                }
+            }
+            "stop" -> {
+                if (translationPhase != TranslationPhase.STOPPED) {
+                    log("相手の指示で翻訳を停止します")
+                    resetTranslationState()
+                    voice.pause()
+                }
+                sendTranslationAck(seq, action, ok = true)
+            }
+            else -> log("不明な翻訳指示: $action")
+        }
+    }
+
+    private fun handleTranslationAck(action: String, ok: Boolean, seq: Int, msg: String) {
+        if (translationPhase != TranslationPhase.STARTING) return // 開始者のみ待っている
+        when (action) {
+            "start" -> {
+                log("相手の開始応答: ${if (ok) "成功" else "失敗(${msg})"}(seq=$seq)")
+                peerStartOk = ok
+                evaluateStartOutcome()
+            }
+            "stop" -> Unit // 停止の完了報告は待っていない
+            else -> Unit
+        }
+    }
+
+    private fun sendTranslationCommand(action: String) {
+        val endpointId = connectedEndpointId ?: return
+        translationSeq++
+        runCatching {
+            client.sendPayload(endpointId, Payload.fromBytes(Protocol.transCmd(action, translationSeq)))
+        }.onFailure { log("翻訳指示の送信失敗: ${it.message}") }
+    }
+
+    private fun sendTranslationAck(seq: Int, action: String, ok: Boolean, msg: String = "") {
+        val endpointId = connectedEndpointId ?: return
+        runCatching {
+            client.sendPayload(endpointId, Payload.fromBytes(Protocol.transAck(action, ok, seq, msg)))
+        }.onFailure { log("翻訳応答の送信失敗: ${it.message}") }
+    }
+
+    // --- インターネット到達性監視 ---
+
+    private fun registerNetworkCallback() {
+        val cm = connectivityManager ?: return
+        val callback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) = onMainThread { recheckOnline() }
+            override fun onLost(network: Network) = onMainThread { recheckOnline() }
+            override fun onCapabilitiesChanged(network: Network, caps: NetworkCapabilities) =
+                onMainThread { recheckOnline() }
+        }
+        runCatching { cm.registerDefaultNetworkCallback(callback) }
+        recheckOnline()
+    }
+
+    /** 検証済み(実際にインターネットへ出られる)既定ネットワークがあるかを反映する */
+    private fun recheckOnline() {
+        val caps = connectivityManager?.getNetworkCapabilities(connectivityManager.activeNetwork)
+        online = caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
     }
 
     /**
@@ -400,6 +635,7 @@ class PeerLinkManager(private val context: Context) :
                 heartbeatJob?.cancel()
                 connectedEndpointId = null
                 peer = null
+                resetTranslationState()
                 voice.pause()
                 if (started) {
                     state = State.SEARCHING
@@ -433,8 +669,7 @@ class PeerLinkManager(private val context: Context) :
                             "${packet.name}(${Languages.codeToDisplayMap[packet.lang] ?: packet.lang}) と接続しました",
                         ),
                     )
-                    // 互いの言語が揃ったので音声セッションを開始する
-                    voice.start(myLang, packet.lang, myDeviceId)
+                    // 翻訳はSonioxボタンでの開始指示まで待つ(自動開始しない)
                 }
                 is Protocol.Packet.Speech ->
                     addEntry(
@@ -455,6 +690,10 @@ class PeerLinkManager(private val context: Context) :
                         )
                     }
                 is Protocol.Packet.Pong -> Unit
+                is Protocol.Packet.TransCmd ->
+                    onMainThread { handleTranslationCommand(packet.action, packet.seq) }
+                is Protocol.Packet.TransAck ->
+                    onMainThread { handleTranslationAck(packet.action, packet.ok, packet.seq, packet.msg) }
                 null -> log("解析できないパケットを受信 (${bytes.size} bytes)")
             }
         }
@@ -493,6 +732,7 @@ class PeerLinkManager(private val context: Context) :
         val id = connectedEndpointId
         connectedEndpointId = null
         peer = null
+        resetTranslationState()
         voice.pause()
         if (id != null) runCatching { client.disconnectFromEndpoint(id) }
         addEntry(SpeechEntry.system("応答がないため接続を切断しました。再接続を試みます…"))
@@ -602,6 +842,15 @@ class PeerLinkManager(private val context: Context) :
         onMainThread {
             if (state != VoiceState.LISTENING) onVoicePartial("", "")
             voiceState = state
+            // 開始処理中の確定(LISTENING=成功/ERROR=失敗)を翻訳調停に反映する。
+            // 翻訳中(RUNNING)の一時的切断はVSMの自動再接続に任せる
+            when (state) {
+                VoiceState.LISTENING ->
+                    if (translationPhase == TranslationPhase.STARTING) onOwnStartConcluded(ok = true)
+                VoiceState.ERROR ->
+                    if (translationPhase == TranslationPhase.STARTING) onOwnStartConcluded(ok = false)
+                else -> Unit
+            }
         }
     }
 }

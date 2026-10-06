@@ -26,6 +26,12 @@ object Protocol {
             val ts: Long,
         ) : Packet
 
+        /** 翻訳の開始/停止を相手へ依頼する(actionは"start"/"stop") */
+        data class TransCmd(val action: String, val seq: Int) : Packet
+
+        /** TransCmdに対する相手の実行結果報告 */
+        data class TransAck(val action: String, val ok: Boolean, val seq: Int, val msg: String) : Packet
+
         data class Ping(val ts: Long) : Packet
         data class Pong(val ts: Long) : Packet
     }
@@ -61,6 +67,22 @@ object Protocol {
             put("ts", ts)
         }.toString().toByteArray(Charsets.UTF_8)
 
+    fun transCmd(action: String, seq: Int): ByteArray =
+        JSONObject().apply {
+            put("type", "tcmd")
+            put("action", action)
+            put("seq", seq)
+        }.toString().toByteArray(Charsets.UTF_8)
+
+    fun transAck(action: String, ok: Boolean, seq: Int, msg: String): ByteArray =
+        JSONObject().apply {
+            put("type", "tack")
+            put("action", action)
+            put("ok", ok)
+            put("seq", seq)
+            if (msg.isNotEmpty()) put("msg", msg)
+        }.toString().toByteArray(Charsets.UTF_8)
+
     fun parse(bytes: ByteArray): Packet? = try {
         val obj = JSONObject(String(bytes, Charsets.UTF_8))
         when (obj.optString("type")) {
@@ -79,6 +101,16 @@ object Protocol {
             )
             "ping" -> Packet.Ping(obj.optLong("ts"))
             "pong" -> Packet.Pong(obj.optLong("ts"))
+            "tcmd" -> Packet.TransCmd(
+                action = obj.optString("action"),
+                seq = obj.optInt("seq"),
+            )
+            "tack" -> Packet.TransAck(
+                action = obj.optString("action"),
+                ok = obj.optBoolean("ok"),
+                seq = obj.optInt("seq"),
+                msg = obj.optString("msg"),
+            )
             else -> null
         }
     } catch (_: Exception) {
