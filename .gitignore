@@ -18,3 +18,4 @@ Thumbs.db
 
 # Secrets and keys
 soniox_api_key_*.txt
+.applab-state.json
