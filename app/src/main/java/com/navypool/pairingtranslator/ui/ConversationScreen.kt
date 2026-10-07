@@ -29,6 +29,9 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,9 +39,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,12 +52,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.navypool.pairingtranslator.R
 import com.navypool.pairingtranslator.connection.PeerLinkManager
 import com.navypool.pairingtranslator.connection.SpeechEntry
@@ -311,13 +316,13 @@ private fun NavbarButtons(
     }
 }
 
-/** 自分の入力言語ピル(旗+フルスペル言語名)。タップでドロップダウン選択 */
+/** 自分の入力言語ボタン(旗+フルスペル言語名)。タップでフルスクリーンの選択モーダルを開く */
 @Composable
 private fun LanguagePill(
     peerLink: PeerLinkManager,
     modifier: Modifier = Modifier,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var showSelector by remember { mutableStateOf(false) }
     val info = Languages.list.firstOrNull { it.code == peerLink.myLang }
 
     Box(modifier) {
@@ -333,7 +338,7 @@ private fun LanguagePill(
                 .height(96.dp) // 指定の200%高
                 .background(HsPillBrush, RoundedCornerShape(20.dp))
                 .border(1.dp, HsPillBorder, RoundedCornerShape(20.dp))
-                .clickable { expanded = true }
+                .clickable { showSelector = true }
                 .padding(horizontal = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -347,15 +352,101 @@ private fun LanguagePill(
                 color = HsTextMain,
             )
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            Languages.list.forEach { item ->
-                DropdownMenuItem(
-                    text = { Text(item.displayName, fontSize = 14.sp) },
-                    onClick = {
-                        peerLink.myLang = item.code
-                        expanded = false
-                    },
-                )
+    }
+
+    if (showSelector) {
+        LanguageSelectorDialog(
+            currentLang = peerLink.myLang,
+            onSelect = {
+                peerLink.myLang = it
+                showSelector = false
+            },
+            onDismiss = { showSelector = false },
+        )
+    }
+}
+
+/**
+ * フルスクリーンの言語選択モーダル。右上のClose(×)で閉じ、
+ * 言語セルをタップすると選択して閉じる。3列グリッドで全言語を一覧する。
+ */
+@Composable
+private fun LanguageSelectorDialog(
+    currentLang: String,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            Column(Modifier.fillMaxSize().padding(24.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Text(
+                        "Select your language",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = HsTextMain,
+                    )
+                    // 右上のClose(×)ボタン
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(HsBackground)
+                            .clickable(onClick = onDismiss),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_close_custom),
+                            contentDescription = "閉じる",
+                            tint = HsTextMain,
+                            modifier = Modifier.size(28.dp),
+                        )
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(bottom = 8.dp),
+                ) {
+                    items(Languages.list) { item ->
+                        val selected = item.code == currentLang
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (selected) Color(0xFFDCEDE2) else HsCardWhite)
+                                .border(
+                                    1.dp,
+                                    if (selected) Color(0xFF4C7C7C) else HsPillBorder,
+                                    RoundedCornerShape(12.dp),
+                                )
+                                .clickable { onSelect(item.code) }
+                                .padding(vertical = 10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Text(item.flagEmoji, fontSize = 28.sp)
+                            Text(
+                                item.englishName,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = HsTextMain,
+                                maxLines = 1,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -399,13 +490,8 @@ private fun SpeechBubble(entry: SpeechEntry, peerLang: String?) {
         return
     }
 
-    // 自分の発話は左寄せ、相手の発話は右寄せ(標準チャットアプリと左右逆の配置)。
-    // 吹き出しの内容: 自分の発話は原文(自分の言語)が主、訳文が副。
-    //                 相手の発話は訳文(自分の言語)が主、原文が副。
-    val primary = if (entry.mine) entry.original else entry.translation.ifEmpty { entry.original }
-    val secondary = if (entry.mine) entry.translation else entry.original
-
-    // 吹き出しは画面幅の最大8割まで拡大する
+    // 自分の発言: 1行目に入力文(大・自言語)、2行目に翻訳文(小)。
+    // 相手の発言: 1行目に入力文(小)、2行目に翻訳文(大)。
     BoxWithConstraints(
         Modifier.fillMaxWidth(),
         contentAlignment = if (entry.mine) Alignment.CenterStart else Alignment.CenterEnd,
@@ -421,17 +507,39 @@ private fun SpeechBubble(entry: SpeechEntry, peerLang: String?) {
             modifier = Modifier.widthIn(max = maxWidth * 0.8f),
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 10.dp)) {
-                Text(
-                    primary.ifEmpty { "…" },
-                    fontSize = 32.sp,
-                    color = if (entry.mine) HsMineText else HsPeerText,
-                )
-                if (secondary.isNotEmpty()) {
+                if (entry.mine) {
+                    // 自分の発言: 自言語(入力文)を大きく表示し、翻訳文は小さく添える
                     Text(
-                        secondary,
-                        fontSize = 24.sp,
+                        entry.original.ifEmpty { "…" },
+                        fontSize = 32.sp,
+                        lineHeight = 38.4.sp,
+                        color = HsMineText,
+                    )
+                    if (entry.translation.isNotEmpty()) {
+                        Text(
+                            entry.translation,
+                            fontSize = 12.sp,
+                            lineHeight = 14.4.sp,
+                            color = HsBubbleSubText,
+                        )
+                    }
+                } else {
+                    // 相手の発言: 入力文(小)→翻訳文(大)
+                    Text(
+                        entry.original.ifEmpty { "…" },
+                        fontSize = 12.sp,
+                        // 折り返し時に行が重ならないよう行間を1.2倍に明示する
+                        lineHeight = 14.4.sp,
                         color = HsBubbleSubText,
                     )
+                    if (entry.translation.isNotEmpty()) {
+                        Text(
+                            entry.translation,
+                            fontSize = 32.sp,
+                            lineHeight = 38.4.sp,
+                            color = HsPeerText,
+                        )
+                    }
                 }
                 if (!entry.final) {
                     Text(
