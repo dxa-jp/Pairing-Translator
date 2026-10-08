@@ -59,9 +59,12 @@ class MainActivity : ComponentActivity() {
                         // 権限未付与では発生しないはず(権限付与後にのみ表示する)
                     }
                 },
-                onOpenSettings = {
-                    startActivity(Intent(this, SettingsActivity::class.java))
-                },
+            onOpenSettings = {
+                // HS(翻訳サポ)と同じく、設定画面へ遷移する際に翻訳を停止する。
+                // 相手端末にも停止が通知される
+                peerLink.stopTranslation()
+                startActivity(Intent(this, SettingsActivity::class.java))
+            },
             )
         }
     }
