@@ -103,6 +103,7 @@ class SettingsActivity : ComponentActivity() {
             ) {
                 SettingsScreen(
                     onBack = { finish() },
+                    onExit = { finishAffinity() },
                     onEnableBluetooth = {
                         try {
                             enableBtLauncher.launch(Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE))
@@ -116,7 +117,7 @@ class SettingsActivity : ComponentActivity() {
 }
 
 @Composable
-private fun SettingsScreen(onBack: () -> Unit, onEnableBluetooth: () -> Unit) {
+private fun SettingsScreen(onBack: () -> Unit, onExit: () -> Unit, onEnableBluetooth: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { context.getSharedPreferences("poc_prefs", Context.MODE_PRIVATE) }
     var serverUrl by remember {
@@ -311,6 +312,28 @@ private fun SettingsScreen(onBack: () -> Unit, onEnableBluetooth: () -> Unit) {
 
             SectionHeader("▼ デバッグ")
             DiagnosticsDebugCard(onEnableBluetooth = onEnableBluetooth)
+
+            Spacer(Modifier.height(32.dp))
+            // アプリを終了する(タスク全体を閉じる)
+            Surface(
+                color = Color(0xFFB23A18),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(onClick = onExit),
+            ) {
+                Text(
+                    "アプリを終了",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 14.dp),
+                )
+            }
             Spacer(Modifier.height(32.dp))
         }
 
