@@ -139,6 +139,9 @@ fun ConversationScreen(
                     .padding(horizontal = 16.dp, vertical = 24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
+                // ピクト行: 左=電波 / 中央=時計 / 右=電池残量
+                PictogramBar()
+                Spacer(Modifier.height(12.dp))
                 BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
                     // タイト版アイコンの50%サイズ
                     val iconSize = minOf(120.dp, (maxHeight - 390.dp) / 2)
