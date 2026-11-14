@@ -55,10 +55,12 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.navypool.pairingtranslator.R
@@ -228,15 +230,23 @@ fun ConversationScreen(
  * Sonioxへの接続ボタン(MultiTranslatorのbtnAction相当)。タップで両端末の翻訳を開始/停止する。
  * 表記はMultiTranslatorに合わせ英語(READY/LISTENING)。CONTINUE状態はなく、
  * 一時キーは失効前に自動更新される。
- * キー取得〜Soniox接続〜相手の応答待ち(STARTING)の間は無効化して再タップを防ぐ。
+ * 二度押し防止: キー取得〜Soniox接続〜相手の応答待ち(STARTING)の間は無効化し、
+ * 3点ドットのローディングアニメ(MT準拠)を表示する。セッションが成立したら
+ * マイク波アニメ(MTのmic_anime準拠)を淡い赤で表示する。
  */
 @Composable
 private fun SonioxButton(peerLink: PeerLinkManager, modifier: Modifier = Modifier) {
     val phase = peerLink.translationPhase
-    val enabled = peerLink.peer != null && phase != TranslationPhase.STARTING
+    val paired = peerLink.peer != null
+    val enabled = paired && phase != TranslationPhase.STARTING
     // MultiTranslatorと同じ英語表記。開始処理中もREADYのまま無効化する(MTと同挙動)
     val label = if (phase == TranslationPhase.RUNNING) "LISTENING" else "READY"
-    val tint = if (enabled) HsTextMain else HsTextSub
+    // 翻訳中はMT準拠の淡い赤(#ff4d4d)、未ペアリング時は薄色、それ以外は通常色
+    val labelColor = when {
+        !paired -> HsTextSub
+        phase == TranslationPhase.RUNNING -> Color(0xFFFF4D4D)
+        else -> HsTextMain
+    }
     Box(modifier) {
         Box(
             Modifier
@@ -248,7 +258,7 @@ private fun SonioxButton(peerLink: PeerLinkManager, modifier: Modifier = Modifie
             modifier = Modifier
                 .fillMaxWidth()
                 .height(96.dp) // 指定の200%高
-                .alpha(if (enabled) 1f else 0.55f)
+                .alpha(if (paired) 1f else 0.55f)
                 .background(HsPillBrush, RoundedCornerShape(20.dp))
                 .border(1.dp, HsPillBorder, RoundedCornerShape(20.dp))
                 .clickable(enabled = enabled) { peerLink.toggleTranslation() }
@@ -256,24 +266,71 @@ private fun SonioxButton(peerLink: PeerLinkManager, modifier: Modifier = Modifie
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            Icon(
-                painter = painterResource(
-                    if (phase == TranslationPhase.RUNNING) R.drawable.ic_ear_custom else R.drawable.ic_mic_custom,
-                ),
-                contentDescription = null,
-                tint = tint,
-                modifier = Modifier.size(40.dp),
-            )
+            SonioxIcon(phase, Modifier.size(40.dp))
             // ラベルはアイコンの下に、以前のサイズ(28spの50%)で表示する
             Text(
                 label,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = tint,
+                color = labelColor,
                 maxLines = 1,
             )
         }
     }
+}
+
+/** 翻訳ボタンのアイコン: STARTING=ドットローディング / RUNNING=マイク波アニメ / それ以外=静止マイク */
+@Composable
+private fun SonioxIcon(phase: TranslationPhase, modifier: Modifier = Modifier) {
+    when (phase) {
+        TranslationPhase.STARTING -> AnimatedResIcon(
+            R.drawable.ic_dots_loading,
+            contentDescription = "接続手続き中",
+            modifier = modifier,
+        )
+        TranslationPhase.RUNNING -> AnimatedResIcon(
+            R.drawable.ic_mic_anime,
+            contentDescription = "翻訳中",
+            tint = Color(0xFFFF4D4D),
+            modifier = modifier,
+        )
+        else -> Icon(
+            painter = painterResource(R.drawable.ic_mic_custom),
+            contentDescription = null,
+            tint = HsTextMain,
+            modifier = modifier,
+        )
+    }
+}
+
+/**
+ * リソースの AnimationDrawable / AnimatedVectorDrawable を再生する ImageView。
+ * Compose の painterResource はアニメーションを再生しないため AndroidView 経由で
+ * (drawable as? Animatable)?.start() を呼ぶ。tint は SRC_IN で全体を再着色する。
+ */
+@Composable
+private fun AnimatedResIcon(
+    resId: Int,
+    contentDescription: String,
+    tint: Color? = null,
+    modifier: Modifier = Modifier,
+) {
+    val argb = tint?.toArgb()
+    AndroidView(
+        modifier = modifier,
+        factory = { ctx ->
+            android.widget.ImageView(ctx).apply {
+                setContentDescription(contentDescription)
+                setImageResource(resId)
+                (drawable as? android.graphics.drawable.Animatable)?.start()
+            }
+        },
+        update = { view ->
+            view.colorFilter = argb?.let {
+                android.graphics.PorterDuffColorFilter(it, android.graphics.PorterDuff.Mode.SRC_IN)
+            }
+        },
+    )
 }
 
 /** 翻訳開始/停止ボタンの下に続く丸いアイコンボタン3つ(設定・デバッグログ・ペアリング開始/停止) */
