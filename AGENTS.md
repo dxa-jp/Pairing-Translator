@@ -33,7 +33,10 @@ Lineage: parent `D:\HonyakuSapo` (representative) → this repo (child, client-o
 
 | Path | Content |
 |---|---|
-| `specs/アプリ仕様.md` | App architecture, P2P protocol, voice session, translation finalize logic |
+| `specs/1. アプリ仕様.md` | **Current handover (2026-11)**: full app spec — 2-column UI, status colors, pict row, language modal, Soniox button (phases/animations), tcmd/tack protocol, timeouts |
+| `specs/2. 管理画面仕様.md` | **Current handover**: admin/backend dependency on MultiTranslator (device_auth, temp_key, quotas) |
+| `specs/3. データベース設計.md` | **Current handover**: `poc_prefs` keys, in-memory state, server DB reference |
+| `specs/アプリ仕様.md` | Legacy app spec (v0.2.4 era — language filtering no longer current) |
 | `specs/API仕様.md` | Backend REST API + Soniox WebSocket + P2P protocol reference |
 | `specs/サーバー仕様.md` | Server usage rules (read-only for this project) |
 | `specs/キッティングツール仕様.md` | Manual kitting procedure (no dedicated tool yet) |
